@@ -1,0 +1,22 @@
+.{
+    .name = .zgame,
+    .version = "0.1.0",
+    .fingerprint = 0x772fe1e347431c5e,
+    .minimum_zig_version = "0.16.0",
+
+    .dependencies = .{
+        // Local-path deps into libs/ (git submodules). Each lib builds its own
+        // static-library artifact; build.zig links it (libs-first model).
+        .platform = .{ .path = "libs/zig-cpp-platform-stack-adapter" },
+        .vulkan_stack = .{ .path = "libs/zig-cpp-vulkan-stack-adapter" },
+    },
+
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "shared",
+        "tests",
+        "README.md",
+    },
+}

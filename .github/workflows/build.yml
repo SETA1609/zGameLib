@@ -1,32 +1,66 @@
-name: build
+name: CI
 
+# zGameLib consumes the two adapter libs (git submodules under libs/) and
+# re-exports them. The build job is the merge gate; the display-tests job runs
+# the framework's behavioral suite headlessly via Xvfb + Mesa software drivers.
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
-    branches: [main]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   build:
-    name: ${{ matrix.os }}
+    name: build · ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    # macOS is contributor-led (no mac hardware): visible but non-blocking.
+    continue-on-error: ${{ matrix.os == 'macos-latest' }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
-
+        with:
+          submodules: recursive # the two adapter libs live under libs/
       - name: Install Zig
         uses: mlugg/setup-zig@v2
         with:
           version: 0.16.0
+          use-cache: true
+      - run: zig version
+      - name: fmt + build + module test
+        run: |
+          zig fmt --check build.zig build.zig.zon src shared tests
+          zig build
+          zig build test
 
-      - name: zig version
-        run: zig version
-
-      - name: Build
-        run: zig build
-
-      - name: Run
-        run: zig build run
+  # The framework's behavioral suite (cross-lib integration + the OpenGL
+  # hand-off) under Xvfb + Mesa software drivers (llvmpipe GL + lavapipe Vulkan).
+  # Informational (continue-on-error): lavapipe's advertised Vulkan version
+  # varies by runner image. Real-GPU verification happens locally.
+  display-tests:
+    name: test-tdd (xvfb + software GL/Vulkan)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+          use-cache: true
+      - name: Install Xvfb + Mesa software GL + lavapipe Vulkan ICD
+        run: sudo apt-get update && sudo apt-get install -y xvfb mesa-utils libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers
+      - name: behavioral suite under Xvfb
+        env:
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: xvfb-run -a zig build test-tdd
