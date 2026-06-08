@@ -1,0 +1,24 @@
+zGameLib
+Copyright 2026 Sebastian Tamayo (SETA1609)
+
+This product includes software developed by Sebastian Tamayo (SETA1609),
+licensed under the Apache License, Version 2.0.
+
+zGameLib is a thin framework layer. It does not vendor the code it builds on;
+it links the following components, each distributed under its OWN license
+(NOT Apache-2.0). When you redistribute a binary built with zGameLib, you must
+also satisfy these components' attribution requirements. See LICENSING.md for
+the full map and a compliance checklist.
+
+  - zig-cpp-platform-stack-adapter — MIT — © SETA1609
+  - zig-cpp-vulkan-stack-adapter   — MIT — © SETA1609
+  - SDL3 (via castholm/SDL)        — Zlib — © Sam Lantinga and contributors
+  - vulkan-zig (Snektron)          — MIT
+  - Vulkan-Headers (Khronos)       — Apache-2.0 OR MIT — © The Khronos Group
+  - VulkanMemoryAllocator (AMD)    — MIT — © Advanced Micro Devices, Inc.
+  - volk                           — MIT — © Arseny Kapoulkine
+  - shaderc (via tiawl/shaderc.zig; opt-in -Dshaderc) — Apache-2.0 — © The Khronos Group / Google
+
+The full text of each third-party license ships with that component's source
+(its own LICENSE file). This NOTICE is informational and does not modify the
+Apache License.

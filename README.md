@@ -68,5 +68,20 @@ zig build test-tdd -Dshaderc   # also build the vulkan stack with runtime shader
 
 ## Sibling libraries
 
-- [zig-cpp-platform-stack-adapter](https://github.com/SETA1609/zig-cpp-platform-stack-adapter) — windowing + input, renderer-agnostic.
-- [zig-cpp-vulkan-stack-adapter](https://github.com/SETA1609/zig-cpp-vulkan-stack-adapter) — the Vulkan stack (vk + volk + VMA + shaderc) + per-OS surface creators.
+- [zig-cpp-platform-stack-adapter](https://github.com/SETA1609/zig-cpp-platform-stack-adapter) — windowing + input, renderer-agnostic. **MIT.**
+- [zig-cpp-vulkan-stack-adapter](https://github.com/SETA1609/zig-cpp-vulkan-stack-adapter) — the Vulkan stack (vk + volk + VMA + shaderc) + per-OS surface creators. **MIT.**
+
+## License
+
+zGameLib is licensed under the **Apache License 2.0** ([`LICENSE`](LICENSE),
+[`NOTICE`](NOTICE)). It's permissive: you can use it in **commercial and
+closed-source products** without releasing your own source — you just include the
+license, keep the notices, and carry the `NOTICE` attribution forward.
+
+The sibling adapter libraries above (and the native stack they pull in — SDL3,
+vulkan-zig, VMA, volk, shaderc) stay under their **own** permissive licenses
+(MIT / Zlib / Apache-2.0), and zGameLib links rather than vendors them, so those
+attribution obligations travel with your binary too.
+
+**👉 Consuming zGameLib in your own project? Read [`LICENSING.md`](LICENSING.md)** —
+it has the full dependency license map and a step-by-step compliance checklist.

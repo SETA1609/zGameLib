@@ -18,5 +18,8 @@
         "shared",
         "tests",
         "README.md",
+        "LICENSE",
+        "NOTICE",
+        "LICENSING.md",
     },
 }
