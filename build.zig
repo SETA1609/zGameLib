@@ -49,6 +49,19 @@ pub fn build(b: *std.Build) void {
     zgame_mod.linkLibrary(platform_dep.artifact("platform"));
     zgame_mod.linkLibrary(vulkan_dep.artifact("vulkan_stack"));
 
+    // The **platform-only** flavour of the framework — re-exports `platform` and
+    // links ONLY the platform artifact (drags no vulkan). Consumers whose binary
+    // must show zero vk*/VK_ symbols (the decoupling gate, the OpenGL hand-off)
+    // import this instead of the full `zgame`, yet still reach the adapter
+    // *through* the framework rather than depending on it directly.
+    const zgame_platform_mod = b.addModule("zgame_platform", .{
+        .root_source_file = b.path("src/root_platform.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    zgame_platform_mod.addImport("platform", platform_dep.module("platform"));
+    zgame_platform_mod.linkLibrary(platform_dep.artifact("platform"));
+
     // `zig build test` — analyze + link the framework module (refAllDecls).
     const mod_tests = b.addTest(.{ .root_module = zgame_mod });
     b.step("test", "Analyze + link the framework module")
@@ -84,7 +97,16 @@ pub fn build(b: *std.Build) void {
     }
     const gltests = b.addTest(.{ .root_module = gltest_mod });
 
+    // The suite is also exposed as two named steps so a consumer's CI can run
+    // them with different gating (e.g. OpenGL gates, lavapipe-Vulkan is
+    // informational). `test-tdd` runs both.
+    const itest_step = b.step("test-integration", "Cross-lib integration test (window → surface → device → present; needs a display + Vulkan)");
+    itest_step.dependOn(&b.addRunArtifact(itests).step);
+
+    const gltest_step = b.step("test-opengl", "OpenGL hand-off test (system-linked GL; needs a display + a GL driver)");
+    gltest_step.dependOn(&b.addRunArtifact(gltests).step);
+
     const tdd = b.step("test-tdd", "Run the framework's behavioral suite (integration + opengl; needs a display + Vulkan/GL)");
-    tdd.dependOn(&b.addRunArtifact(itests).step);
-    tdd.dependOn(&b.addRunArtifact(gltests).step);
+    tdd.dependOn(itest_step);
+    tdd.dependOn(gltest_step);
 }
