@@ -36,6 +36,26 @@ pub fn build(b: *std.Build) void {
     });
     swapchain_mod.addImport("vulkan_stack", vulkan_dep.module("vulkan_stack"));
 
+    // Render helpers (the boilerplate lifted out of the examples): Vulkan
+    // bring-up + the frames-in-flight ring. Same tier as surface/swapchain.
+    const gpu_mod = b.createModule(.{
+        .root_source_file = b.path("shared/gpu.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    gpu_mod.addImport("platform", platform_dep.module("platform"));
+    gpu_mod.addImport("vulkan_stack", vulkan_dep.module("vulkan_stack"));
+    gpu_mod.addImport("surface", surface_mod);
+    gpu_mod.addImport("swapchain", swapchain_mod);
+
+    const frame_mod = b.createModule(.{
+        .root_source_file = b.path("shared/frame.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    frame_mod.addImport("vulkan_stack", vulkan_dep.module("vulkan_stack"));
+    frame_mod.addImport("swapchain", swapchain_mod);
+
     // The framework module — re-exports the building blocks + the glue.
     const zgame_mod = b.addModule("zgame", .{
         .root_source_file = b.path("src/root.zig"),
@@ -46,6 +66,8 @@ pub fn build(b: *std.Build) void {
     zgame_mod.addImport("vulkan_stack", vulkan_dep.module("vulkan_stack"));
     zgame_mod.addImport("surface", surface_mod);
     zgame_mod.addImport("swapchain", swapchain_mod);
+    zgame_mod.addImport("gpu", gpu_mod);
+    zgame_mod.addImport("frame", frame_mod);
     zgame_mod.linkLibrary(platform_dep.artifact("platform"));
     zgame_mod.linkLibrary(vulkan_dep.artifact("vulkan_stack"));
 
@@ -97,6 +119,19 @@ pub fn build(b: *std.Build) void {
     }
     const gltests = b.addTest(.{ .root_module = gltest_mod });
 
+    // The render-abstractions spec: drives the framework's OWN api (`zgame.Gpu`,
+    // `zgame.FrameRing`, `zgame.transitionImage`), so it imports the `zgame`
+    // module rather than the adapters directly. Importing `zgame` propagates its
+    // linked artifacts. Needs a display + a Vulkan loader (skips otherwise).
+    const gputest_mod = b.createModule(.{
+        .root_source_file = b.path("tests/gpu_test.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+    gputest_mod.addImport("zgame", zgame_mod);
+    const gputests = b.addTest(.{ .root_module = gputest_mod });
+
     // The suite is also exposed as two named steps so a consumer's CI can run
     // them with different gating (e.g. OpenGL gates, lavapipe-Vulkan is
     // informational). `test-tdd` runs both.
@@ -106,7 +141,11 @@ pub fn build(b: *std.Build) void {
     const gltest_step = b.step("test-opengl", "OpenGL hand-off test (system-linked GL; needs a display + a GL driver)");
     gltest_step.dependOn(&b.addRunArtifact(gltests).step);
 
-    const tdd = b.step("test-tdd", "Run the framework's behavioral suite (integration + opengl; needs a display + Vulkan/GL)");
+    const gputest_step = b.step("test-gpu", "Render-abstractions spec (Gpu + FrameRing + transitionImage; needs a display + Vulkan)");
+    gputest_step.dependOn(&b.addRunArtifact(gputests).step);
+
+    const tdd = b.step("test-tdd", "Run the framework's behavioral suite (integration + opengl + gpu; needs a display + Vulkan/GL)");
     tdd.dependOn(itest_step);
     tdd.dependOn(gltest_step);
+    tdd.dependOn(gputest_step);
 }
