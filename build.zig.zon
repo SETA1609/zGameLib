@@ -9,6 +9,7 @@
         // static-library artifact; build.zig links it (libs-first model).
         .platform = .{ .path = "libs/zig-cpp-platform-stack-adapter" },
         .vulkan_stack = .{ .path = "libs/zig-cpp-vulkan-stack-adapter" },
+        .zclip = .{ .path = "libs/zClip" },
     },
 
     .paths = .{

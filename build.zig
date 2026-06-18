@@ -25,6 +25,7 @@ pub fn build(b: *std.Build) void {
 
     const platform_dep = b.dependency("platform", .{ .target = target, .optimize = optimize });
     const vulkan_dep = b.dependency("vulkan_stack", .{ .target = target, .optimize = optimize, .shaderc = enable_shaderc });
+    const zclip_dep = b.dependency("zclip", .{ .target = target, .optimize = optimize });
 
     // Shared glue (renderer policy the libs leave to the consumer): the comptime
     // surface bridge + a reusable swapchain.
@@ -75,8 +76,10 @@ pub fn build(b: *std.Build) void {
     zgame_mod.addImport("swapchain", swapchain_mod);
     zgame_mod.addImport("gpu", gpu_mod);
     zgame_mod.addImport("frame", frame_mod);
+    zgame_mod.addImport("zclip", zclip_dep.module("zclip"));
     zgame_mod.linkLibrary(platform_dep.artifact("platform"));
     zgame_mod.linkLibrary(vulkan_dep.artifact("vulkan_stack"));
+    zgame_mod.linkLibrary(zclip_dep.artifact("zclip"));
 
     // The **platform-only** flavour of the framework — re-exports `platform` and
     // links ONLY the platform artifact (drags no vulkan). Consumers whose binary

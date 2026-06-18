@@ -37,6 +37,9 @@ pub const surface = @import("surface");
 /// A reusable **swapchain** (renderer policy: format/present-mode/recreation).
 pub const swapchain = @import("swapchain");
 
+/// zClip — the C/C++/Zig hybrid lib, re-exported through the framework.
+pub const zclip = @import("zclip");
+
 // --- Render helpers (the boilerplate lifted out of the examples) ----------
 // Same tier as surface/swapchain — reusable renderer policy the libs leave to
 // the consumer, wired as their own modules in build.zig.

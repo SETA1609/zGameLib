@@ -4,3 +4,6 @@
 [submodule "libs/zig-cpp-vulkan-stack-adapter"]
 	path = libs/zig-cpp-vulkan-stack-adapter
 	url = git@github.com:SETA1609/zig-cpp-vulkan-stack-adapter.git
+[submodule "libs/zClip"]
+	path = libs/zClip
+	url = git@github.com:SETA1609/zClip.git
