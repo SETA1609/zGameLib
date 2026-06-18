@@ -5,9 +5,11 @@ adapter libraries (windowing/input + the Vulkan stack), which it **re-exports**
 so you're never boxed in.
 
 > **Status:** active. The build re-exports the libs and the framework's
-> behavioral suite is green. Sprite-animation via zClip is integrated
-> and consumed by the game. Higher-level rendering and asset pipelines are
-> being built out.
+> behavioral suite is green. **zClip**, the animation lib, is wired in — raw as
+> `zgame.zclip`, plus the framework's `zgame.animation` abstraction slot — but
+> both are at the **scaffold** stage (build shell done, playback paths still
+> stubs; see zClip's [roadmap](libs/zClip/docs/ROADMAP.md)). Higher-level
+> rendering and asset pipelines are being built out.
 
 ## The idea — two tiers, raw-first
 
@@ -27,6 +29,8 @@ Unlike a walled-garden framework (raylib), zGameLib follows the same
    const shaderc   = zgame.shaderc;       // GLSL → SPIR-V (opt-in -Dshaderc)
    const surface   = zgame.surface;       // the platform↔vulkan surface bridge
    const swapchain = zgame.swapchain;     // a reusable swapchain (renderer policy)
+   const zclip     = zgame.zclip;         // the raw animation lib (sprite + skeletal)
+   const animation = zgame.animation;     // the unified animation API over zclip
    ```
 
 Re-exports go **through** the libs (not parallel deps), so the Vulkan stack's
@@ -46,7 +50,8 @@ intact.
 │   ├── surface.zig             # comptime platform↔vulkan surface bridge
 │   ├── swapchain.zig           # reusable swapchain (format/present/recreate)
 │   ├── gpu.zig                 # Vulkan bring-up helper (Gpu)
-│   └── frame.zig               # frames-in-flight ring (FrameRing)
+│   ├── frame.zig               # frames-in-flight ring (FrameRing)
+│   └── animation.zig           # unified animation API over zClip (`zgame.animation`)
 ├── examples/                   # framework consumers (NOT part of the library)
 │   ├── event-logger/           # rung 0 — platform-only event logger
 │   ├── clear-color/            # rung 1 — reactive clear-color
@@ -61,9 +66,10 @@ intact.
 │   └── examples/               # per-example design docs + ladder + roadmap
 ├── scripts/
 │   └── ci.sh                   # CI gates (runnable locally)
-└── libs/                       # the adapter libs (git submodules)
+└── libs/                       # the adapter + animation libs (git submodules)
     ├── zig-cpp-platform-stack-adapter
-    └── zig-cpp-vulkan-stack-adapter
+    ├── zig-cpp-vulkan-stack-adapter
+    └── zClip                   # the animation lib (sprite-atlas + skeletal/glTF)
 ```
 
 ## Build & test
@@ -99,6 +105,26 @@ for design docs and the full ladder of planned examples.
 
 - [zig-cpp-platform-stack-adapter](https://github.com/SETA1609/zig-cpp-platform-stack-adapter) — windowing + input, renderer-agnostic. **MIT.**
 - [zig-cpp-vulkan-stack-adapter](https://github.com/SETA1609/zig-cpp-vulkan-stack-adapter) — the Vulkan stack (vk + volk + VMA + shaderc) + per-OS surface creators. **MIT.**
+- [`zClip`](libs/zClip) — the **animation** lib: two raw paths (sprite-atlas, pure Zig · skeletal-from-glTF via vendored cgltf) under one "pose at phase" contract. The framework lifts the timeline policy over it as `zgame.animation`. **MIT.** Roadmap: [`libs/zClip/docs/ROADMAP.md`](libs/zClip/docs/ROADMAP.md).
+
+## Roadmap
+
+The framework grows in tiers; the raw re-exports land first, the convenience
+layer over them follows.
+
+| Area | Where | Status |
+| --- | --- | --- |
+| Re-exports (platform / Vulkan stack / surface / swapchain) | `root.zig` | shipped |
+| Vulkan bring-up + frames-in-flight (`Gpu`, `FrameRing`) | `shared/gpu.zig`, `shared/frame.zig` | shipped |
+| **Animation** — raw `zgame.zclip` + unified `zgame.animation` | `shared/animation.zig` + [`libs/zClip`](libs/zClip) | scaffold — see [zClip roadmap](libs/zClip/docs/ROADMAP.md) |
+| `App` harness (window + frame loop) | `src/app.zig` | stub |
+| Renderer + asset-pipeline helpers | — | planned |
+
+Animation is the active build-out. Its per-version plan to **v1.0.0** (sprite at
+v0.6, cgltf at v0.7, skeletal at v0.8, the unified `Animator` at v0.9, freeze at
+v1.0) lives in the lib: [`libs/zClip/docs/ROADMAP.md`](libs/zClip/docs/ROADMAP.md).
+The framework half — the `Cursor`/`Animator` timeline policy — lands in
+[`shared/animation.zig`](shared/animation.zig) at v0.9.
 
 ## License
 
