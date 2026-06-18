@@ -37,15 +37,20 @@ pub const surface = @import("surface");
 /// A reusable **swapchain** (renderer policy: format/present-mode/recreation).
 pub const swapchain = @import("swapchain");
 
-/// zClip — the C/C++/Zig hybrid lib, re-exported through the framework.
+/// zClip — the raw **animation** lib (sprite-atlas + skeletal-from-glTF),
+/// re-exported through the framework (raw-first tier; drive it directly, or
+/// use the `animation` abstraction below).
 pub const zclip = @import("zclip");
 
-// --- Render helpers (the boilerplate lifted out of the examples) ----------
-// Same tier as surface/swapchain — reusable renderer policy the libs leave to
-// the consumer, wired as their own modules in build.zig.
+// --- Render / animation helpers (the boilerplate lifted out of the examples) -
+// Same tier as surface/swapchain — reusable policy the libs leave to the
+// consumer, wired as their own modules in build.zig.
 
 const gpu_mod = @import("gpu");
 const frame_mod = @import("frame");
+
+/// The framework's unified **animation** API, lifted over `zclip`. *(scaffold)*
+pub const animation = @import("animation");
 
 /// Vulkan **bring-up**: `Gpu.init(window, .{})` → instance + surface + device +
 /// present queue, all as public fields. See gpu.zig.
