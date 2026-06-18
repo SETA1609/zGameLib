@@ -4,10 +4,10 @@ A light, **transparent** game-dev framework in Zig — built on two sibling
 adapter libraries (windowing/input + the Vulkan stack), which it **re-exports**
 so you're never boxed in.
 
-> **Status:** early scaffold. The build re-exports the libs and the framework's
-> behavioral suite (the cross-lib integration + OpenGL hand-off tests) is green;
-> the high-level layer (`App`, renderer, assets) is being built out. See
-> [`docs/ROADMAP.md`](docs/ROADMAP.md) once it lands.
+> **Status:** active. The build re-exports the libs and the framework's
+> behavioral suite is green. Sprite-animation via zClip is integrated
+> and consumed by the game. Higher-level rendering and asset pipelines are
+> being built out.
 
 ## The idea — two tiers, raw-first
 
