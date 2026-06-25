@@ -1,25 +1,44 @@
 name: CI
 
-# zGameLib consumes the two adapter libs (git submodules under libs/) and
-# re-exports them. The build job is the merge gate; the display-tests job runs
-# the framework's behavioral suite headlessly via Xvfb + Mesa software drivers.
+# zGameLib CI: builds the framework, runs the cross-lib behavioural tests, and
+# builds the examples (which consume the framework but are not part of the
+# library package). Checks live in scripts/ci.sh (single source of truth,
+# runnable locally); the jobs here check out submodules recursively + install
+# the toolchain / Vulkan ICD.
 on:
   push:
     branches: ['**']
   pull_request:
 
+# Least privilege: these workflows only check out + build; no writes needed.
 permissions:
   contents: read
 
 defaults:
   run:
-    shell: bash
+    shell: bash # so scripts/ci.sh runs on the Windows runner too
 
 jobs:
+  # Lint the workflow YAML itself (this repo's + both submodules') for safety:
+  # structure, action pinning, injection, least-privilege. Uses the vendored
+  # validator under .claude/skills/check-workflows — also a Claude Code skill.
+  lint-workflows:
+    name: lint workflows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive # so it lints the libs' workflows too
+      - name: Install PyYAML
+        run: python3 -c "import yaml" 2>/dev/null || python3 -m pip install --break-system-packages --quiet pyyaml
+      - name: Validate workflow YAML (--strict)
+        run: python3 .claude/skills/check-workflows/validate_workflows.py --strict
+
   build:
     name: build · ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    # macOS is contributor-led (no mac hardware): visible but non-blocking.
+    # macOS is contributor-led (the author has no mac hardware): keep it visible
+    # but non-blocking, so a mac-only break never gates a merge.
     continue-on-error: ${{ matrix.os == 'macos-latest' }}
     strategy:
       fail-fast: false
@@ -35,20 +54,35 @@ jobs:
           version: 0.16.0
           use-cache: true
       - run: zig version
-      - name: fmt + build + module test
-        run: |
-          zig fmt --check build.zig build.zig.zon src shared tests
-          zig build
-          zig build test
+      # fmt + build both rungs (event-logger + clear-color). No GPU/display
+      # needed to build (only to run the windowed example).
+      - name: CI checks
+        run: bash scripts/ci.sh check
 
-  # The framework's behavioral suite (cross-lib integration + the OpenGL
-  # hand-off) under Xvfb + Mesa software drivers (llvmpipe GL + lavapipe Vulkan).
-  # Informational (continue-on-error): lavapipe's advertised Vulkan version
-  # varies by runner image. Real-GPU verification happens locally.
-  display-tests:
-    name: test-tdd (xvfb + software GL/Vulkan)
+  # The platform↔vulkan decoupling invariant: a platform-only binary drags in
+  # zero Vulkan. (nm over event-logger.)
+  decoupling:
+    name: decoupling check (nm)
     runs-on: ubuntu-latest
-    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+          use-cache: true
+      - run: bash scripts/ci.sh decoupling
+
+  # Headless display / GPU coverage on Linux, via Xvfb + Mesa software drivers.
+  #  * OpenGL (test-opengl) on Mesa llvmpipe — software GL is reliable, so it GATES.
+  #  * Vulkan integration (test-integration -Dshaderc) on Mesa lavapipe — lavapipe's
+  #    advertised Vulkan version varies by runner image (the harness requests 1.3),
+  #    so it's informational (continue-on-error), not a hard gate.
+  display-tests:
+    name: display tests (xvfb + software GL/Vulkan)
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -60,7 +94,8 @@ jobs:
           use-cache: true
       - name: Install Xvfb + Mesa software GL + lavapipe Vulkan ICD
         run: sudo apt-get update && sudo apt-get install -y xvfb mesa-utils libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers
-      - name: behavioral suite under Xvfb
-        env:
-          LIBGL_ALWAYS_SOFTWARE: "1"
-        run: xvfb-run -a zig build test-tdd
+      - name: OpenGL integration (software GL) — gates
+        run: bash scripts/ci.sh opengl
+      - name: Vulkan integration (lavapipe) — informational
+        continue-on-error: true
+        run: bash scripts/ci.sh integration
