@@ -16,7 +16,7 @@ case "${1:-check}" in
     echo "== zig build (framework + compile-check all examples) =="; zig build event-logger clear-color clear-color-2 || exit 1
     ;;
   decoupling)
-    zig build event-logger || exit 1
+    echo "== zig build (framework + event-logger) =="; zig build || exit 1
     # The decoupling invariant: a platform-only binary pulls in none of OUR
     # vulkan stack. We match vulkan-zig's `vk.`-namespaced wrappers + volk/VMA/
     # shaderc symbols — NOT a bare `vk*` grep, which would also flag SDL3's own

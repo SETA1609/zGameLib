@@ -222,8 +222,15 @@ fn addExample(b: *std.Build, opts: ExampleOpts) void {
         }),
     });
     exe.root_module.addImport("zgame", opts.zgame_mod);
+    b.installArtifact(exe);
 
+    // Compile-only step (default, for CI / headless environments).
+    b.step(opts.name, b.fmt("Compile the {s} example (no run)", .{opts.name}))
+        .dependOn(&exe.step);
+
+    // Run step (needs a display + Vulkan/GL driver for windowed examples).
     const run = b.addRunArtifact(exe);
     if (b.args) |args| run.addArgs(args);
-    b.step(opts.name, opts.description).dependOn(&run.step);
+    b.step(b.fmt("run-{s}", .{opts.name}), b.fmt("Build + run the {s} example", .{opts.name}))
+        .dependOn(&run.step);
 }
