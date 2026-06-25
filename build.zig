@@ -17,6 +17,9 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    // Collect example executables so `zig build dev` can install + compile-check them.
+    var example_exes: std.ArrayList(*std.Build.Step.Compile) = .empty;
+
     // Pass through to the vulkan stack: runtime GLSL→SPIR-V (shaderc), off by default.
     const enable_shaderc = b.option(bool, "shaderc", "Build the vulkan stack with runtime shaderc (GLSL→SPIR-V)") orelse false;
 
@@ -169,7 +172,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
         .zgame_mod = zgame_platform_mod,
-    });
+    }, &example_exes);
 
     // Rung 1: clear-color (full framework)
     addExample(b, .{
@@ -179,7 +182,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
         .zgame_mod = zgame_mod,
-    });
+    }, &example_exes);
 
     // Rung 1, reprise: clear-color-2 (built on zGameLib abstractions)
     addExample(b, .{
@@ -189,7 +192,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
         .zgame_mod = zgame_mod,
-    });
+    }, &example_exes);
 
     // color-logger (stub, full framework) — disabled until zgame.framework API lands
     // addExample(b, .{
@@ -199,7 +202,18 @@ pub fn build(b: *std.Build) void {
     //     .target = target,
     //     .optimize = optimize,
     //     .zgame_mod = zgame_mod,
-    // });
+    // }, &example_exes);
+
+    // --- `zig build dev`: framework + examples + tests — the full dev command ---
+    const dev_step = b.step("dev", "Build framework + examples + run all tests");
+    dev_step.dependOn(b.default_step);
+    for (example_exes.items) |exe| {
+        dev_step.dependOn(&exe.step);
+        dev_step.dependOn(&b.addInstallArtifact(exe, .{}).step);
+    }
+    dev_step.dependOn(itest_step);
+    dev_step.dependOn(gltest_step);
+    dev_step.dependOn(gputest_step);
 }
 
 const ExampleOpts = struct {
@@ -212,7 +226,7 @@ const ExampleOpts = struct {
     zgame_mod: *std.Build.Module,
 };
 
-fn addExample(b: *std.Build, opts: ExampleOpts) void {
+fn addExample(b: *std.Build, opts: ExampleOpts, exes: *std.ArrayList(*std.Build.Step.Compile)) void {
     const exe = b.addExecutable(.{
         .name = opts.name,
         .root_module = b.createModule(.{
@@ -222,11 +236,13 @@ fn addExample(b: *std.Build, opts: ExampleOpts) void {
         }),
     });
     exe.root_module.addImport("zgame", opts.zgame_mod);
-    b.installArtifact(exe);
+    exes.append(b.allocator, exe) catch @panic("OOM");
 
-    // Compile-only step (default, for CI / headless environments).
-    b.step(opts.name, b.fmt("Compile the {s} example (no run)", .{opts.name}))
-        .dependOn(&exe.step);
+    // Compile-only step (for CI / headless environments). Also installs so the
+    // binary is at zig-out/bin/<name> (needed by the decoupling nm gate).
+    const compile_step = b.step(opts.name, b.fmt("Compile the {s} example (no run)", .{opts.name}));
+    compile_step.dependOn(&exe.step);
+    compile_step.dependOn(&b.addInstallArtifact(exe, .{}).step);
 
     // Run step (needs a display + Vulkan/GL driver for windowed examples).
     const run = b.addRunArtifact(exe);
