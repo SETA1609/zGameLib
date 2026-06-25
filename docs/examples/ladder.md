@@ -22,6 +22,19 @@ Each app consumes both adapters via `libs/` (built + linked as artifacts) and pu
 | 15 | **shader-playground** | (v0.6.0) | v0.4.0 | shaderc **runtime compile + hot-reload** — a fullscreen-quad fragment-shader scratchpad |
 | 16 | **hello-cube** ← *tail / 3D smoke* | (v0.6.0) | v0.4.0 (shaders) + depth | perspective MVP + a depth attachment — the stack survives 3D (untextured single cube) |
 
+## Animation track (zClip)
+
+The rungs above exercise the adapter stack (windowing + Vulkan). These four rungs exercise **zClip**, the sibling animation lib, which ships separately and has its own dependency graph. They sit after `space-invaders` (rung 6) because sprite atlases need texturing — but they are a parallel track, gated on zClip milestones rather than adapter milestones.
+
+They test two tiers: the raw `zclip.sprite` / `zclip.skeletal` paths, and the framework's unified `zgame.animation` abstraction.
+
+| # | App | Animates | zClip milestone | Validates |
+| --- | --- | --- | --- | --- |
+| A1 | **sprite-showcase** | Sprite-atlas flipbook | v0.6.0 | atlas load → phase-based frame advance → looping/ping-pong → frame events — raw `zclip.sprite` path |
+| A2 | **gltf-viewer** | Skeletal from glTF | v0.7.0 | cgltf load → bone hierarchy → per- joint transforms → skinning on a visible mesh — raw `zclip.skeletal` path |
+| A3 | **animation-browser** | Unified `zgame.animation` | v0.9.0 | `Cursor`/`Animator` timeline policy over either clip type — switch between sprite + skeletal clips through one interface |
+| A4 | **run-cycle** | Blending + game-loop | v0.9.0 | multiple clips, crossfade, fixed-timestep advance, keyboard–driven clip switching |
+
 ## Decoupling checks (`nm`)
 
 The architecture rests on each adapter dragging only its own concern. Two apps prove it — treat these as required:
