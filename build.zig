@@ -191,15 +191,15 @@ pub fn build(b: *std.Build) void {
         .zgame_mod = zgame_mod,
     });
 
-    // color-logger (stub, full framework)
-    addExample(b, .{
-        .name = "color-logger",
-        .source = "examples/color-logger/color-loger.zig",
-        .description = "Build + run the color-logger example",
-        .target = target,
-        .optimize = optimize,
-        .zgame_mod = zgame_mod,
-    });
+    // color-logger (stub, full framework) — disabled until zgame.framework API lands
+    // addExample(b, .{
+    //     .name = "color-logger",
+    //     .source = "examples/color-logger/color-loger.zig",
+    //     .description = "Build + run the color-logger example",
+    //     .target = target,
+    //     .optimize = optimize,
+    //     .zgame_mod = zgame_mod,
+    // });
 }
 
 const ExampleOpts = struct {
@@ -222,7 +222,6 @@ fn addExample(b: *std.Build, opts: ExampleOpts) void {
         }),
     });
     exe.root_module.addImport("zgame", opts.zgame_mod);
-    b.installArtifact(exe);
 
     const run = b.addRunArtifact(exe);
     if (b.args) |args| run.addArgs(args);

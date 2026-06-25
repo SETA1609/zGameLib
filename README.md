@@ -40,13 +40,27 @@ intact.
 ├── build.zig / build.zig.zon   # re-export module + linked lib artifacts
 ├── src/
 │   ├── root.zig                # the `zgame` module — re-exports + high-level API
+│   ├── root_platform.zig       # platform-only module (no vulkan)
 │   └── app.zig                 # App harness (stub)
 ├── shared/
 │   ├── surface.zig             # comptime platform↔vulkan surface bridge
-│   └── swapchain.zig           # reusable swapchain (format/present/recreate)
+│   ├── swapchain.zig           # reusable swapchain (format/present/recreate)
+│   ├── gpu.zig                 # Vulkan bring-up helper (Gpu)
+│   └── frame.zig               # frames-in-flight ring (FrameRing)
+├── examples/                   # framework consumers (NOT part of the library)
+│   ├── event-logger/           # rung 0 — platform-only event logger
+│   ├── clear-color/            # rung 1 — reactive clear-color
+│   ├── clear-color-2/          # rung 1, reprise — on zGameLib abstractions
+│   └── color-logger/           # stub
 ├── tests/                      # the framework's behavioral suite (`test-tdd`)
 │   ├── integration_test.zig    # cross-lib: window → surface → device → present
-│   └── opengl_test.zig         # the OpenGL hand-off (system-linked GL)
+│   ├── opengl_test.zig         # the OpenGL hand-off (system-linked GL)
+│   └── gpu_test.zig            # render-abstractions spec (Gpu + FrameRing)
+├── docs/
+│   ├── theory/                 # beginner theory guides for the stack
+│   └── examples/               # per-example design docs + ladder + roadmap
+├── scripts/
+│   └── ci.sh                   # CI gates (runnable locally)
 └── libs/                       # the adapter libs (git submodules)
     ├── zig-cpp-platform-stack-adapter
     └── zig-cpp-vulkan-stack-adapter
@@ -65,6 +79,21 @@ zig build test-tdd        # the behavioral suite — needs a display + a Vulkan/
                           # driver (run locally, or under Xvfb + Mesa in CI)
 zig build test-tdd -Dshaderc   # also build the vulkan stack with runtime shaderc
 ```
+
+## Examples
+
+The repo ships standalone example apps under `examples/` that consume the
+framework but are **not** bundled with the library package. Build and run them
+individually:
+
+```sh
+zig build event-logger        # rung 0 — platform-only (no vulkan)
+zig build clear-color         # rung 1 — windowed clear-color (needs display + Vulkan)
+zig build clear-color-2       # rung 1, reprise — on zGameLib abstractions
+```
+
+Each example is a complete, runnable app — see [`docs/examples/`](docs/examples/)
+for design docs and the full ladder of planned examples.
 
 ## Sibling libraries
 
