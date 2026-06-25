@@ -15,6 +15,8 @@ Each release is a **lib-milestone phase** that delivers the ladder rungs sharing
 | **v0.5.0** | Devices & persistence | pong, 2048, typing-game | v0.8.0 | v0.3.0 |
 | **v0.6.0** | Shaders & compute | life, particles, shader-playground | (v0.6.0) | v0.4.0 |
 | **v0.7.0** | 3D smoke *(tail)* | hello-cube | (v0.6.0) | v0.4.0 + depth |
+| **v0.8.0** | Animation raw paths | sprite-showcase, gltf-viewer | — (zClip v0.6/v0.7) | — |
+| **v0.9.0** | Unified animation API | animation-browser, run-cycle | — (zClip v0.9) | — |
 | **v1.0.0** | Stable | every rung green; both `nm` checks pass; CI matrix green — the set is the engine's reference consumer | — | — |
 
 Phases beyond v0.1.0 may resequence as the libs' own roadmaps firm up.

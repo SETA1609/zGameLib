@@ -16,6 +16,8 @@
 
 6. **CI builds *and runs* each landed app** on the supported target matrix, so "compiles" never gets mistaken for "works".
 
+7. **An animation track** (sprite-atlas flipbook, glTF skeletal, unified `zgame.animation`) exercises the zClip sibling lib alongside the adapter pair, gated on zClip milestones rather than platform/vulkan ones.
+
 ## What "green" means (success criteria)
 
 - Every rung in [`ladder.md`](ladder.md) **builds and runs correctly** — not merely compiles.

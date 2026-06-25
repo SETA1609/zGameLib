@@ -32,6 +32,9 @@ zig build test-integration    # cross-lib tests: platform handles → vulkan ins
 - `clear-color` is **rung 1** (platform + vulkan together) — implemented: a window
   whose swapchain image is cleared each frame to a cycling palette, recreated on
   resize. See [`clear-color.md`](clear-color.md).
+- **Animation examples** (sprite-showcase, gltf-viewer, animation-browser,
+  run-cycle) ship alongside the main ladder through the zClip animation lib.
+  See [`ladder.md`](ladder.md) § Animation track.
 - `test-integration` today: instance from the platform's extensions, the surface
   hand-off, and the full stack (window → instance → surface → device → VMA
   allocator). Add `-Dshaderc` to also run the shaderc GLSL→SPIR-V cross-stack
