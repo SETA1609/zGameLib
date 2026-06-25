@@ -6,12 +6,19 @@
 //! and link its artifact. The framework's behavioral suite (the cross-lib
 //! integration + OpenGL tests) is `zig build test-tdd` — it needs a display +
 //! a Vulkan/GL driver, so it's run locally / under Xvfb in CI.
+//!
+//! Examples live in `examples/` and are built as consumers of the framework
+//! (importing `zgame` or `zgame_platform`). They are NOT part of the library
+//! package — `examples/` is excluded from `.paths` in `build.zig.zon`.
 
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+
+    // Collect example executables so `zig build dev` can install + compile-check them.
+    var example_exes: std.ArrayList(*std.Build.Step.Compile) = .empty;
 
     // Pass through to the vulkan stack: runtime GLSL→SPIR-V (shaderc), off by default.
     const enable_shaderc = b.option(bool, "shaderc", "Build the vulkan stack with runtime shaderc (GLSL→SPIR-V)") orelse false;
@@ -111,7 +118,10 @@ pub fn build(b: *std.Build) void {
         .link_libc = true,
     });
     gltest_mod.addImport("platform", platform_dep.module("platform"));
+    gltest_mod.addImport("surface", surface_mod);
+    gltest_mod.addImport("vulkan_stack", vulkan_dep.module("vulkan_stack"));
     gltest_mod.linkLibrary(platform_dep.artifact("platform"));
+    gltest_mod.linkLibrary(vulkan_dep.artifact("vulkan_stack"));
     switch (target.result.os.tag) {
         .windows => gltest_mod.linkSystemLibrary("opengl32", .{}),
         .macos => gltest_mod.linkFramework("OpenGL", .{}),
@@ -132,7 +142,7 @@ pub fn build(b: *std.Build) void {
     gputest_mod.addImport("zgame", zgame_mod);
     const gputests = b.addTest(.{ .root_module = gputest_mod });
 
-    // The suite is also exposed as two named steps so a consumer's CI can run
+    // The suite is also exposed as named steps so a consumer's CI can run
     // them with different gating (e.g. OpenGL gates, lavapipe-Vulkan is
     // informational). `test-tdd` runs both.
     const itest_step = b.step("test-integration", "Cross-lib integration test (window → surface → device → present; needs a display + Vulkan)");
@@ -148,4 +158,95 @@ pub fn build(b: *std.Build) void {
     tdd.dependOn(itest_step);
     tdd.dependOn(gltest_step);
     tdd.dependOn(gputest_step);
+
+    // --- Examples: consumers of the framework, NOT part of the library -------
+    // Each example is a standalone executable that imports `zgame` or
+    // `zgame_platform`. They live in `examples/` which is excluded from
+    // `.paths` in `build.zig.zon`.
+
+    // Rung 0: event-logger (platform-only, no vulkan)
+    addExample(b, .{
+        .name = "event-logger",
+        .source = "examples/event-logger/main.zig",
+        .description = "Build + run the platform-only event logger (rung 0)",
+        .target = target,
+        .optimize = optimize,
+        .zgame_mod = zgame_platform_mod,
+    }, &example_exes);
+
+    // Rung 1: clear-color (full framework)
+    addExample(b, .{
+        .name = "clear-color",
+        .source = "examples/clear-color/main.zig",
+        .description = "Build + run the reactive clear-color example (rung 1)",
+        .target = target,
+        .optimize = optimize,
+        .zgame_mod = zgame_mod,
+    }, &example_exes);
+
+    // Rung 1, reprise: clear-color-2 (built on zGameLib abstractions)
+    addExample(b, .{
+        .name = "clear-color-2",
+        .source = "examples/clear-color-2/main.zig",
+        .description = "Build + run clear-color rebuilt on the zGameLib abstractions",
+        .target = target,
+        .optimize = optimize,
+        .zgame_mod = zgame_mod,
+    }, &example_exes);
+
+    // color-logger (stub, full framework) — disabled until zgame.framework API lands
+    // addExample(b, .{
+    //     .name = "color-logger",
+    //     .source = "examples/color-logger/color-loger.zig",
+    //     .description = "Build + run the color-logger example",
+    //     .target = target,
+    //     .optimize = optimize,
+    //     .zgame_mod = zgame_mod,
+    // }, &example_exes);
+
+    // --- `zig build dev`: framework + examples + tests — the full dev command ---
+    const dev_step = b.step("dev", "Build framework + examples + run all tests");
+    dev_step.dependOn(b.default_step);
+    for (example_exes.items) |exe| {
+        dev_step.dependOn(&exe.step);
+        dev_step.dependOn(&b.addInstallArtifact(exe, .{}).step);
+    }
+    dev_step.dependOn(itest_step);
+    dev_step.dependOn(gltest_step);
+    dev_step.dependOn(gputest_step);
+}
+
+const ExampleOpts = struct {
+    name: []const u8,
+    source: []const u8,
+    description: []const u8,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+    /// The zGameLib module this example imports as `zgame` (full or platform-only).
+    zgame_mod: *std.Build.Module,
+};
+
+fn addExample(b: *std.Build, opts: ExampleOpts, exes: *std.ArrayList(*std.Build.Step.Compile)) void {
+    const exe = b.addExecutable(.{
+        .name = opts.name,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path(opts.source),
+            .target = opts.target,
+            .optimize = opts.optimize,
+        }),
+    });
+    exe.root_module.addImport("zgame", opts.zgame_mod);
+    exes.append(b.allocator, exe) catch @panic("OOM");
+
+    // Compile-only step (for CI / headless environments). Also installs so the
+    // binary is at zig-out/bin/<name> (needed by the decoupling nm gate).
+    const compile_step = b.step(opts.name, b.fmt("Compile the {s} example (no run)", .{opts.name}));
+    compile_step.dependOn(&exe.step);
+    compile_step.dependOn(&b.addInstallArtifact(exe, .{}).step);
+
+    // Run step (needs a display + Vulkan/GL driver for windowed examples).
+    const run = b.addRunArtifact(exe);
+    if (b.args) |args| run.addArgs(args);
+    b.step(b.fmt("run-{s}", .{opts.name}), b.fmt("Build + run the {s} example", .{opts.name}))
+        .dependOn(&run.step);
 }
