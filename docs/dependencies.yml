@@ -116,14 +116,23 @@ consumes:
     - id: zimgui
       package: Dear ImGui
       status: planned
+      phase: late
       build_flag: "-DimGui"
-      role: Optional immediate-mode UI — Vulkan + SDL3 backends
+      role: Optional immediate-mode UI — Vulkan + SDL3 backends (after 2D batcher)
       module: zgame.zimgui
       license: MIT
       doc: docs/imgui.md
       policy: >
-        Default off. Required by Nexus Crucible (Tier 3).
-        Not required for shipped games or default zGameLib builds.
+        Late optional module. Required by Nexus Crucible (v1.1.0+).
+        Not in default builds. Fonts (zfont) ship after zimgui.
+
+    - id: zfont
+      package: (FreeType + HarfBuzz optional)
+      status: planned
+      phase: late
+      role: Font rendering / shaping — after zimgui
+      module: zgame.zfont
+      policy: Optional; Nexus TextServer consumes; not localization
 
   planned_native_transitive:
     - id: imgui

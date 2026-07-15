@@ -70,8 +70,9 @@ The framework grows by adding new independent adapters (not monolithic dependenc
 - `platform` — SDL3 (window, input, events)
 - `vulkan` — Explicit Vulkan stack (volk + VMA + shader compilation + reflection)
 - `audio` — miniaudio (modern primary) + SDL3 fallback
-- Future: assets, animation, etc.
-- `zimgui` — optional Dear ImGui bridge (`-DimGui`; see [`imgui.md`](imgui.md))
+- Future: assets, animation, 2D batcher (priority)
+- `zimgui` — optional Dear ImGui bridge (`-DimGui`; **late** roadmap — see [`imgui.md`](imgui.md))
+- `zfont` — optional fonts (**after** `zimgui`)
 
 Each adapter only pulls in what it needs. They meet at narrow, explicit seams.
 

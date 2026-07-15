@@ -1,7 +1,7 @@
 # Dear ImGui in zGameLib (optional `zimgui`)
 
-**Status:** Planned (Phase 1 Q3 2026)  
-**Policy:** Optional sibling adapter — **not** a core dependency of zGameLib.
+**Status:** Planned (**late** optional module — Phase 3, after 2D batcher)  
+**Policy:** Optional sibling adapter — **not** a core dependency. Ships when **Nexus Crucible** (v1.1.0+) needs it.
 
 ---
 
