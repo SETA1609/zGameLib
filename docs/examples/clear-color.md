@@ -1,8 +1,12 @@
-# Reactive clear-color — design
+# Reactive clear-color — design (rung 1)
 
 > **Status: implemented** — `examples/clear-color/main.zig` builds and runs (`zig build clear-color`). The surface bridge shipped as [`../../shared/surface.zig`](../../shared/surface.zig) and the swapchain as the reusable [`../../shared/swapchain.zig`](../../shared/swapchain.zig) helper (renderer policy — it lives in this repo, not the vulkan lib). As shipped, the clear-colour cycles a 6-colour palette one colour per second (a `platform.now()` timer) rather than tracking mouse/keys, and the app quits on window close. The rest of this doc is the original design.
 
-> The first app that exercises **both** adapters together. It's deliberately the smallest such program, so it isolates *"do the two libs talk to each other?"* from *"can I draw geometry?"*. If this runs clean under the validation layers, the whole decoupled-adapter architecture is proven and Snake (which adds buffers) becomes a safe next step.
+> **Rung 1** of the [ladder](ladder.md) — the first app that exercises **both**
+> adapters together (platform + vulkan, joined at the comptime surface bridge).
+> It's deliberately the smallest such program, so it isolates *"do the two libs
+> talk to each other?"* from *"can I draw geometry?"*. If this runs clean under
+> the validation layers, the whole decoupled-adapter architecture is proven.
 
 ## What it does
 

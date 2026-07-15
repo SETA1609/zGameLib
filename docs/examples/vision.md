@@ -22,6 +22,7 @@ Each rung:
 | **Integration test** | drives the sibling libs together through the surface bridge — the path unit tests can't reach |
 | **Usage example** | shows a consumer wiring the libs the canonical way (import the module, link the artifact) |
 | **Modularity proof** | demonstrates that adding this capability does **not** pull in unrelated libraries |
+| **Milestone driver** | (Track B / animation track) building the app justifies the next slice of each library |
 
 ## Consumed the way a real project consumes them
 

@@ -38,7 +38,7 @@ consumes:
       path: libs/zClip
       kind: git_submodule
       status: partial
-      role: Animation — sprite-atlas + skeletal/glTF
+      role: Animation — sprite-atlas (v0.6 shipped) + skeletal/glTF (in progress)
       module: zgame.zclip
       license: MIT
 
@@ -159,3 +159,9 @@ policy:
   no_gpl_lgpl_agpl: true
   raw_access_always: true
   submodule_init: git submodule update --init --recursive
+  macos:
+    in_scope: true
+    deferred: false
+    behavior_source: Redot clean-room study (Cocoa/Metal/MoltenVK hand-off)
+    maintainer_ci: build/compile in container VM pipelines (macos-latest)
+    contributor_testing: runtime and display validation on real macOS hardware required for macOS-specific PRs

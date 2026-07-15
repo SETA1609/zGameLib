@@ -16,18 +16,22 @@ to (a) read the example apps that drive this framework, and (b) write your own.
 
 ---
 
-## The mental model: layers, raw-first
+## The mental model: layers, raw-first, pay-for-what-you-use
 
 There are a handful of layers between your app code and the hardware. The golden
 rule of the whole framework is **raw-first / opt-in**: every layer *re-exports* the
 one beneath it, so you can always drop down a level the moment a convenience helper
 gets in your way. Nothing is hidden.
 
+The second golden rule is **pay for what you use**: only the modules your
+application actually touches are compiled in. A platform-only binary drags no
+Vulkan symbols; an app without animation compiles no zClip code.
+
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
 │  YOUR APP  (clear-color, hello-triangle, …)                                │
 ├──────────────────────────────────────────────────────────────────────────┤
-│  zGameLib — the framework (convenience layer)                              │
+│  zGameLib — the framework (optional convenience layer)                     │
 │    App · Gpu · Swapchain · FrameRing · surface bridge                      │
 │    …and it RE-EXPORTS everything below, so nothing is hidden               │
 ├──────────────────────┬──────────────────────┬─────────────────────────────┤
@@ -39,12 +43,11 @@ gets in your way. Nothing is hidden.
 └──────────────────────┴──────────────────────┴─────────────────────────────┘
 ```
 
-> **This diagram is a snapshot, not a fixed shape.** Today the adapter tier has
-> **two** sibling libraries — windowing/input and the Vulkan stack — because those
+> **This diagram is a snapshot, not a fixed shape.** Today the sibling tier has
+> **two** libraries — windowing/input and the Vulkan stack — because those
 > are what the current rungs need. The tier is designed to *grow*: audio (likely a
-> miniaudio-backed sub-lib), animation, asset loading, and other concerns are
-> expected to arrive as their own sibling libraries over time. Read "two adapters"
-> below as "the two that exist *right now*", not "the architecture is two-sided".
+> miniaudio-backed sub-lib), animation (zClip), asset loading, and other concerns
+> are expected to arrive as their own sibling libraries over time.
 
 The defining property is not the *count* of sub-libraries but their
 **independence**: each sibling drags in only its own native dependency and knows
@@ -52,8 +55,9 @@ nothing about the others. The windowing lib drags in no Vulkan; the Vulkan lib
 drags in no windowing; a future audio lib will drag in neither. Sub-libraries that
 *do* need to cooperate meet at **narrow, explicit seams** that pass only raw
 primitives — never a shared type. The window↔Vulkan **surface bridge** (file 03)
-is the first such seam, and the template for any future one. That decoupling — not
-the two-column picture — is the single most important design idea in the project.
+is the first such seam, and the template for any future one. That decoupling — and
+the **pay-for-what-you-use** rule that it enables — are the single most important
+design ideas in the project.
 
 zGameLib's own module root states the principle directly:
 
@@ -72,7 +76,7 @@ Read them in this order — each builds on the last:
 
 | # | File | What you learn |
 | --- | --- | --- |
-| 00 | **this file** | the four layers + the raw-first philosophy |
+| 00 | **this file** | the layers + the raw-first philosophy + pay-for-what-you-use |
 | 01 | [`01-sdl3-and-the-platform-adapter.md`](01-sdl3-and-the-platform-adapter.md) | what SDL3 is; how a window + an event loop + input work; how the platform adapter wraps it |
 | 02 | [`02-vulkan-and-the-vulkan-stack.md`](02-vulkan-and-the-vulkan-stack.md) | what Vulkan is; the object hierarchy; what `vk`, `volk`, `VMA`, and `shaderc` each do |
 | 03 | [`03-the-surface-bridge.md`](03-the-surface-bridge.md) | the one seam where windowing meets Vulkan, and why no type crosses it |
@@ -91,16 +95,18 @@ Read them in this order — each builds on the last:
 
 ## Why this framework exists (one paragraph)
 
-zGameLib sits on top of two adapter libraries that exercise windowing and the
-Vulkan stack **together**. The framework itself is described by its own README as:
+zGameLib sits on top of sibling adapter libraries that each do one thing. It
+re-exports them as a coherent namespace and adds optional convenience helpers.
+The framework itself is described by its own README as:
 
-> "A light, **transparent** game-dev framework in Zig — built on two sibling
-> adapter libraries (windowing/input + the Vulkan stack), which it **re-exports**
-> so you're never boxed in."
+> "A **transparent**, modular game-development middleware in Zig — built on a
+> growing family of **independent, decoupled sibling libraries** that do one thing
+> each. You pull in exactly what you use; nothing else compiles or ships."
 > — [zGameLib README](../../README.md)
 
 "Transparent" and "re-exports so you're never boxed in" *are* the raw-first
-philosophy. Keep that phrase in mind; it explains every design choice you'll meet.
+philosophy. "You pull in exactly what you use" is the pay-for-what-you-use rule.
+Keep both phrases in mind; they explain every design choice you'll meet.
 
 ---
 

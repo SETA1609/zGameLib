@@ -159,7 +159,7 @@ tree:
       - path: zClip/
         type: directory
         status: partial
-        description: Animation lib (sprite-atlas + skeletal/glTF)
+        description: Animation lib — sprite-atlas v0.6 shipped; skeletal/glTF in progress
 
   - path: tests/
     type: directory

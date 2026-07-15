@@ -32,6 +32,16 @@
 6. **CI builds *and runs* each landed example** on the supported target matrix,
    so "compiles" never gets mistaken for "works".
 
+7. **An animation track** (sprite-atlas flipbook, glTF skeletal, unified
+   `zgame.animation`) exercises the zClip sibling lib alongside the adapter
+   pair, gated on zClip milestones rather than platform/vulkan ones. Design
+   docs: [`sprite-showcase.md`](sprite-showcase.md), [`gltf-viewer.md`](gltf-viewer.md),
+   [`animation-browser.md`](animation-browser.md), [`run-cycle.md`](run-cycle.md).
+
+8. **Extended validation apps** (snake, space-invaders, `hello-cube`, …) reuse
+   the same adapters to drive **milestone depth** without adding new siblings —
+   see Track B in [`ladder.md`](ladder.md) and release phases in [`ROADMAP.md`](ROADMAP.md).
+
 ## What "green" means (success criteria)
 
 - Every rung in [`ladder.md`](ladder.md) **builds and runs correctly** — not merely compiles.
@@ -44,7 +54,7 @@
 - Reimplementing any sibling library's own validation apps (each lib tests itself in isolation; this repo tests the **composition**).
 - Shared game-project infrastructure across the examples — duplication between toys is fine and expected.
 - 3D beyond a single untextured cube — `hello-cube` is a smoke test, not a renderer.
-- macOS — deferred in lockstep with the platform lib's roadmap.
+- macOS runtime QA on maintainer hardware — macOS is **in scope** (Redot-informed Cocoa/Metal hand-off); CI covers builds in container pipelines; **contributors validate windowed runs** on real Macs before macOS-specific PRs land.
 
 ## See also
 
