@@ -201,7 +201,57 @@ pub fn build(b: *std.Build) void {
     addExample(b, .{
         .name = "clear-color-2",
         .source = "examples/clear-color-2/main.zig",
-        .description = "Build + run clear-color rebuilt on the zGameLib abstractions",
+        .description = "Build + run clear-color rebuilt on the zGameLib abstractions (rung 2)",
+        .target = target,
+        .optimize = optimize,
+        .zgame_mod = zgame_mod,
+    }, &example_exes);
+
+    // Rung 2+: hello-triangle (first pipeline + vertex buffer)
+    addExample(b, .{
+        .name = "hello-triangle",
+        .source = "examples/hello-triangle/main.zig",
+        .description = "Build + run the hello-triangle example (first pipeline + VMA buffer)",
+        .target = target,
+        .optimize = optimize,
+        .zgame_mod = zgame_mod,
+    }, &example_exes);
+
+    // Rung 3: animation-demo (zClip) — stub until zClip is ready
+    addExample(b, .{
+        .name = "animation-demo",
+        .source = "examples/animation-demo/main.zig",
+        .description = "Build + run the animation demo (stub until zClip is ready)",
+        .target = target,
+        .optimize = optimize,
+        .zgame_mod = zgame_mod,
+    }, &example_exes);
+
+    // Rung 4: audio-demo (zaudio) — stub until zaudio exists
+    addExample(b, .{
+        .name = "audio-demo",
+        .source = "examples/audio-demo/main.zig",
+        .description = "Build + run the audio demo (stub - zaudio does not exist yet)",
+        .target = target,
+        .optimize = optimize,
+        .zgame_mod = zgame_mod,
+    }, &example_exes);
+
+    // Rung 5: asset-demo (zassets) — stub until zassets exists
+    addExample(b, .{
+        .name = "asset-demo",
+        .source = "examples/asset-demo/main.zig",
+        .description = "Build + run the asset demo (stub - zassets does not exist yet)",
+        .target = target,
+        .optimize = optimize,
+        .zgame_mod = zgame_mod,
+    }, &example_exes);
+
+    // Rung 6: app-demo (zgame.App) — stub until App harness is ready
+    addExample(b, .{
+        .name = "app-demo",
+        .source = "examples/app-demo/main.zig",
+        .description = "Build + run the app harness demo (stub - App not yet implemented)",
         .target = target,
         .optimize = optimize,
         .zgame_mod = zgame_mod,
