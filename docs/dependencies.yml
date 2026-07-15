@@ -113,6 +113,27 @@ consumes:
       role: SIMD-friendly math types
       module: zgame.zmath
 
+    - id: zimgui
+      package: Dear ImGui
+      status: planned
+      build_flag: "-DimGui"
+      role: Optional immediate-mode UI — Vulkan + SDL3 backends
+      module: zgame.zimgui
+      license: MIT
+      doc: docs/imgui.md
+      policy: >
+        Default off. Required by Nexus Crucible (Tier 3).
+        Not required for shipped games or default zGameLib builds.
+
+  planned_native_transitive:
+    - id: imgui
+      via: zimgui
+      upstream: ocornut/imgui
+      status: planned
+      role: Dear ImGui core + SDL3/Vulkan backends
+      license: MIT
+      build_flag: "-DimGui"
+
 consumed_by:
   - id: nexus_engine
     name: Nexus-engine
@@ -146,6 +167,13 @@ consumed_by:
       - audio-demo
       - asset-demo
       - app-demo
+
+  - id: crucible
+    name: Link-editor (Crucible)
+    tier: 3
+    relationship: editor_consumer
+    status: planned
+    note: Hard-depends on zgame.zimgui (-DimGui=true); see Nexus-engine dependencies.yml
 
   - id: external_games
     name: Third-party Zig games / tools

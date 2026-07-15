@@ -71,6 +71,7 @@ The framework grows by adding new independent adapters (not monolithic dependenc
 - `vulkan` — Explicit Vulkan stack (volk + VMA + shader compilation + reflection)
 - `audio` — miniaudio (modern primary) + SDL3 fallback
 - Future: assets, animation, etc.
+- `zimgui` — optional Dear ImGui bridge (`-DimGui`; see [`imgui.md`](imgui.md))
 
 Each adapter only pulls in what it needs. They meet at narrow, explicit seams.
 
@@ -260,7 +261,7 @@ zGameLib is Tier 1 — the foundation. It does not ship an engine or an editor.
 
 Higher layers (Tier 2 engines, Tier 3 editors) are **separate projects** that consume the framework. They can re-export zGameLib, wrap it, or bypass it entirely.
 
-The editor is an optional layer that can serve any engine — or be hooked by other tools that want the same human/scripting tooling.
+The editor is an optional layer that can serve any engine — or be hooked by other tools that want the same human/scripting tooling. **Dear ImGui** is optional in zGameLib (`-DimGui`) for immediate-mode **tool** UI; Nexus **Crucible** requires it for the editor. **In-game UI** uses the planned **2D batcher**, not ImGui — see [`imgui.md`](imgui.md) and [Nexus theory 06](../../Nexus-engine/docs/theory/06-ui-and-localization.md). **Localization** lives in Nexus only: `.po` source → build-time JSON → data-oriented `LocalizationSystem` — no ICU, no i18next, and no i18n in zGameLib.
 
 ---
 

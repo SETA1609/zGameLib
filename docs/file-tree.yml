@@ -127,6 +127,10 @@ tree:
       - path: reference.md
         type: file
         status: shipped
+      - path: imgui.md
+        type: file
+        status: planned
+        description: Optional Dear ImGui bridge (-DimGui build flag)
       - path: file-tree.yml
         type: file
         status: shipped

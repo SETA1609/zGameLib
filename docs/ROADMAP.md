@@ -86,7 +86,7 @@ Every decision flows from these axioms (see [`README.md`](../README.md)):
 
 - [ ] Better error handling and diagnostics across adapters
 - [ ] More examples: textured rendering (`space-invaders`), audio playback (`audio-demo`), basic ImGui demo
-- [ ] Documentation updates (especially ImGui integration guide)
+- [ ] Documentation updates — [`docs/imgui.md`](imgui.md) (integration guide)
 - [ ] Stabilize build system and dependency management (pinned submodule SHAs per release)
 - [ ] Optional texture compression helpers (Basis Universal / KTX)
 - [ ] Extended validation ladder: snake → space-invaders rungs (games + texturing without new libs)
