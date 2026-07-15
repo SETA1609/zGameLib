@@ -80,6 +80,7 @@ Read them in this order — each builds on the last:
 | 05 | [`05-the-swapchain.md`](05-the-swapchain.md) | the ring of images you present to the screen; format/present-mode/resize policy |
 | 06 | [`06-the-frame-ring.md`](06-the-frame-ring.md) | frames-in-flight; fences vs. semaphores; acquire → render → present |
 | 07 | [`07-the-app-harness.md`](07-the-app-harness.md) | the top-level `App` loop, and when *not* to use it |
+| 08 | [`08-hot-reload.md`](08-hot-reload.md) | hot reload at the foundation level — rebuild primitives, typed hooks, what Tier 1 does (and doesn't) reload |
 
 > **Two companion docs already live next to the code.** The framework ships
 > [`shared/gpu.md`](../../shared/gpu.md) and [`shared/frame.md`](../../shared/frame.md)
@@ -110,5 +111,6 @@ philosophy. Keep that phrase in mind; it explains every design choice you'll mee
   (the framework layer documented here).
 - **Khronos Vulkan specification** — <https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html>
 - **SDL3 wiki** — <https://wiki.libsdl.org/SDL3/>
+- **Nexus-engine hot reload** — upstream [08-hot-reload-nexus-engine.md](../../../docs/theory/08-hot-reload-nexus-engine.md) (Tier 2 consumer)
 
 Quoted excerpts are © their respective owners, used here for teaching/commentary.
