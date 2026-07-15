@@ -1,142 +1,148 @@
 # zGameLib
 
-A light, **transparent** game-dev framework in Zig — built on two sibling
-adapter libraries (windowing/input + the Vulkan stack), which it **re-exports**
-so you're never boxed in.
+A **transparent**, modular game-development middleware in Zig — built on a
+growing family of **independent, decoupled sibling libraries** that do one thing
+each. You pull in exactly what you use; nothing else compiles or ships.
 
-> **Status:** active. The build re-exports the libs and the framework's
-> behavioral suite is green. **zClip**, the animation lib, is wired in — raw as
-> `zgame.zclip`, plus the framework's `zgame.animation` abstraction slot — but
-> both are at the **scaffold** stage (build shell done, playback paths still
-> stubs; see zClip's [roadmap](libs/zClip/docs/ROADMAP.md)). Higher-level
-> rendering and asset pipelines are being built out.
+> **Influenced by Casey Muratori's Handmade Hero philosophy:**
+> thin platform layer, explicit control, replaceable pieces, raw access always
+> available, and no framework magic.
 
-## The idea — two tiers, raw-first
+## Philosophy — pay for what you use
 
-Unlike a walled-garden framework (raylib), zGameLib follows the same
-**opt-in / raw-first** principle as the libs underneath it:
+zGameLib is **optional lightweight middleware**, not a required heavy framework.
 
-1. **High-level** — `zgame.App` (the loop) + renderer/asset helpers (coming).
-2. **The building blocks, re-exported** — reach them directly and drive the raw
-   APIs the moment you outgrow the convenience layer. Nothing is hidden:
+The core design rule: **only the libraries and modules your application actually
+uses are compiled in and shipped.** If your app only needs windowing + input,
+that's all that gets linked — no Vulkan, no audio, no animation. Add each
+capability explicitly as you need it, with zero cross-contamination.
 
-   ```zig
-   const zgame = @import("zgame");
+```
+┌──────────────────────────────────────────────────────────────────┐
+│  YOUR APP                                                        │
+│                                                                  │
+│  Pick any subset:   platform · vulkan · audio · zClip · zassets  │
+├──────────────────────────────────────────────────────────────────┤
+│  zGameLib (optional middleware)                                   │
+│    Re-exports everything below so you can always reach raw APIs.  │
+│    Provides optional helpers: Gpu · FrameRing · swapchain · App   │
+├──────────┬──────────┬──────────┬──────────┬──────────────────────┤
+│ platform │ vulkan   │ zaudio   │ zClip    │ zassets  (future)    │
+│ adapter  │ stack    │ (future) │ anim     │ VFS                 │
+│ (SDL3)   │ adapter  │          │          │                     │
+├──────────┴──────────┴──────────┴──────────┴──────────────────────┤
+│  SDL3 · libvulkan · miniaudio · cgltf · … (native libraries)    │
+└──────────────────────────────────────────────────────────────────┘
+```
 
-   const platform = zgame.platform;       // windowing + input (SDL3 backend)
-   const vk        = zgame.vk;            // vulkan-zig's typed Vulkan API
-   const vma       = zgame.vma;           // GPU allocator
-   const shaderc   = zgame.shaderc;       // GLSL → SPIR-V (opt-in -Dshaderc)
-   const surface   = zgame.surface;       // the platform↔vulkan surface bridge
-   const swapchain = zgame.swapchain;     // a reusable swapchain (renderer policy)
-   const zclip     = zgame.zclip;         // the raw animation lib (sprite + skeletal)
-   const animation = zgame.animation;     // the unified animation API over zclip
-   ```
+### Key principles
 
-Re-exports go **through** the libs (not parallel deps), so the Vulkan stack's
-version coherence (vk.xml ↔ VMA ↔ shaderc) and the SDL3 backend are inherited
-intact.
+| Principle | What it means |
+|-----------|---------------|
+| **Pay for what you use** | Only the libraries you explicitly add to your dependency graph are compiled and linked. Platform-only app? No Vulkan stack compiled. |
+| **Thin platform layer** | The platform abstraction is small, stable, and explicit. Most game code stays platform-agnostic. |
+| **Raw access always** | Every convenience helper re-exports the raw API beneath it. You can bypass zGameLib at any point and work directly with the underlying library. |
+| **Composition, not inheritance** | Build systems by composing small, focused sibling libraries. No deep class hierarchies. |
+| **Explicit control flow** | No hidden behavior, no framework magic. You can trace every call. |
+| **Replaceable pieces** | The platform backend (SDL3), renderer backend, and audio backend are each swappable independently. |
+| **Performance as a first-class concern** | Even examples and docs keep performance implications visible and honest. |
+
+## Two tiers, raw-first
+
+Unlike a walled-garden framework (raylib, Unity), zGameLib gives you **two tiers**
+with the same **opt-in / raw-first** principle:
+
+1. **Building blocks** — independent sibling libraries (windowing, Vulkan,
+   animation, etc.), each usable standalone or composed. Imported and re-exported
+   through zGameLib but never hidden.
+2. **Optional middleware** — `zgame.Gpu`, `zgame.FrameRing`, `zgame.App`, and
+   other helpers that lift boilerplate out of your app. Always layered *over* the
+   raw APIs, never replacing them.
+
+```zig
+const zgame = @import("zgame");
+
+const platform = zgame.platform;       // windowing + input (SDL3 backend)
+const vk        = zgame.vk;            // vulkan-zig's typed Vulkan API
+const vma       = zgame.vma;           // GPU memory allocator
+const shaderc   = zgame.shaderc;       // GLSL → SPIR-V (opt-in -Dshaderc)
+const surface   = zgame.surface;       // the platform↔vulkan surface bridge
+const swapchain = zgame.swapchain;     // a reusable swapchain (renderer policy)
+const zclip     = zgame.zclip;         // raw animation lib (sprite + skeletal)
+const animation = zgame.animation;     // unified animation API over zclip
+```
+
+**Pros stop using the middleware at any rung** and drive the raw libraries
+directly. Nothing is hidden; you never get stuck.
+
+The "pay for what you use" rule extends to every tier. A platform-only binary
+(`@import("zgame_platform")`) links **only** the platform adapter — no Vulkan
+symbols enter the binary, provable via `nm`.
 
 ## Layout
 
-```
-.
-├── build.zig / build.zig.zon   # re-export module + linked lib artifacts
-├── src/
-│   ├── root.zig                # the `zgame` module — re-exports + high-level API
-│   ├── root_platform.zig       # platform-only module (no vulkan)
-│   └── app.zig                 # App harness (stub)
-├── shared/
-│   ├── surface.zig             # comptime platform↔vulkan surface bridge
-│   ├── swapchain.zig           # reusable swapchain (format/present/recreate)
-│   ├── gpu.zig                 # Vulkan bring-up helper (Gpu)
-│   ├── frame.zig               # frames-in-flight ring (FrameRing)
-│   └── animation.zig           # unified animation API over zClip (`zgame.animation`)
-├── examples/                   # framework consumers (NOT part of the library)
-│   ├── event-logger/           # rung 0 — platform-only event logger
-│   ├── clear-color/            # rung 1 — reactive clear-color
-│   ├── clear-color-2/          # rung 1, reprise — on zGameLib abstractions
-│   └── color-logger/           # stub
-├── tests/                      # the framework's behavioral suite (`test-tdd`)
-│   ├── integration_test.zig    # cross-lib: window → surface → device → present
-│   ├── opengl_test.zig         # the OpenGL hand-off (system-linked GL)
-│   └── gpu_test.zig            # render-abstractions spec (Gpu + FrameRing)
-├── docs/
-│   ├── theory/                 # beginner theory guides for the stack
-│   └── examples/               # per-example design docs + ladder + roadmap
-├── scripts/
-│   └── ci.sh                   # CI gates (runnable locally)
-└── libs/                       # the adapter + animation libs (git submodules)
-    ├── zig-cpp-platform-stack-adapter
-    ├── zig-cpp-vulkan-stack-adapter
-    └── zClip                   # the animation lib (sprite-atlas + skeletal/glTF)
-```
+Canonical repository layout:
+[`docs/file-tree.yml`](docs/file-tree.yml) ·
+dependencies:
+[`docs/dependencies.yml`](docs/dependencies.yml).
+
+Summary: `src/` (framework modules) · `shared/` (Gpu, FrameRing, …) ·
+`examples/` (reference ladder — not shipped with the default artifact) ·
+`libs/` (sibling submodules) · `docs/` · `tests/`.
 
 ## Build & test
 
 Requires **Zig 0.16+**. After cloning:
 
 ```sh
-git submodule update --init --recursive   # the adapter libs live under libs/
+git submodule update --init --recursive
 
 zig build                 # build the re-export module + lib artifacts
 zig build test            # analyze + link the framework module
-zig build test-tdd        # the behavioral suite — needs a display + a Vulkan/GL
-                          # driver (run locally, or under Xvfb + Mesa in CI)
-zig build test-tdd -Dshaderc   # also build the vulkan stack with runtime shaderc
+zig build test-tdd        # behavioral suite — needs a display + Vulkan/GL
+zig build test-tdd -Dshaderc   # also build with runtime shaderc
 ```
 
-## Examples
+### Example ladder (incremental, pay-as-you-go)
 
-The repo ships standalone example apps under `examples/` that consume the
-framework but are **not** bundled with the library package. Build and run them
-individually:
+Build and run examples individually. Each only compiles the libraries it needs:
 
 ```sh
-zig build event-logger        # rung 0 — platform-only (no vulkan)
-zig build clear-color         # rung 1 — windowed clear-color (needs display + Vulkan)
-zig build clear-color-2       # rung 1, reprise — on zGameLib abstractions
+zig build event-logger        # rung 0 — platform only (no vulkan). ~fastest build.
+zig build clear-color         # rung 1 — platform + vulkan (raw surface hand-off)
+zig build clear-color-2       # rung 2 — same app on zGameLib Gpu/FrameRing helpers
+zig build hello-triangle      # rung 2+ — adds VMA vertex buffer + pipeline
 ```
 
 Each example is a complete, runnable app — see [`docs/examples/`](docs/examples/)
-for design docs and the full ladder of planned examples.
+for design docs and the full modular ladder.
 
-## Sibling libraries
+## Sibling libraries (ecosystem)
 
-- [zig-cpp-platform-stack-adapter](https://github.com/SETA1609/zig-cpp-platform-stack-adapter) — windowing + input, renderer-agnostic. **MIT.**
+Every sibling library is **independent, reusable, and MIT-licensed**. Use them
+standalone or inside zGameLib:
+
+- [zig-cpp-platform-stack-adapter](https://github.com/SETA1609/zig-cpp-platform-stack-adapter) — windowing + input, renderer-agnostic (SDL3 backend). **MIT.**
 - [zig-cpp-vulkan-stack-adapter](https://github.com/SETA1609/zig-cpp-vulkan-stack-adapter) — the Vulkan stack (vk + volk + VMA + shaderc) + per-OS surface creators. **MIT.**
-- [`zClip`](libs/zClip) — the **animation** lib: two raw paths (sprite-atlas, pure Zig · skeletal-from-glTF via vendored cgltf) under one "pose at phase" contract. The framework lifts the timeline policy over it as `zgame.animation`. **MIT.** Roadmap: [`libs/zClip/docs/ROADMAP.md`](libs/zClip/docs/ROADMAP.md).
+- [`zClip`](libs/zClip) — animation lib: sprite-atlas + skeletal-from-glTF. **MIT.**
+- **`zaudio`** (planned) — audio backend abstraction (miniaudio).
+- **`zassets`** (planned) — asset loading / VFS.
+- **`zmath`** (planned) — math library.
 
-## Roadmap
-
-The framework grows in tiers; the raw re-exports land first, the convenience
-layer over them follows.
-
-| Area | Where | Status |
-| --- | --- | --- |
-| Re-exports (platform / Vulkan stack / surface / swapchain) | `root.zig` | shipped |
-| Vulkan bring-up + frames-in-flight (`Gpu`, `FrameRing`) | `shared/gpu.zig`, `shared/frame.zig` | shipped |
-| **Animation** — raw `zgame.zclip` + unified `zgame.animation` | `shared/animation.zig` + [`libs/zClip`](libs/zClip) | scaffold — see [zClip roadmap](libs/zClip/docs/ROADMAP.md) |
-| `App` harness (window + frame loop) | `src/app.zig` | stub |
-| Renderer + asset-pipeline helpers | — | planned |
-
-Animation is the active build-out. Its per-version plan to **v1.0.0** (sprite at
-v0.6, cgltf at v0.7, skeletal at v0.8, the unified `Animator` at v0.9, freeze at
-v1.0) lives in the lib: [`libs/zClip/docs/ROADMAP.md`](libs/zClip/docs/ROADMAP.md).
-The framework half — the `Cursor`/`Animator` timeline policy — lands in
-[`shared/animation.zig`](shared/animation.zig) at v0.9.
+Each follows the Handmade Hero-inspired design: **small interface, thin
+abstraction, raw access always available.** The platform adapter, for example,
+presents a stable API but exposes the underlying SDL3 backend's native handles.
+The Vulkan adapter bundles version-coherent pieces but surfaces them as raw
+vulkan-zig bindings.
 
 ## License
 
-zGameLib is licensed under the **Apache License 2.0** ([`LICENSE`](LICENSE),
-[`NOTICE`](NOTICE)). It's permissive: you can use it in **commercial and
-closed-source products** without releasing your own source — you just include the
-license, keep the notices, and carry the `NOTICE` attribution forward.
+zGameLib is **Apache License 2.0** ([`LICENSE`](LICENSE), [`NOTICE`](NOTICE)).
+Permissive — use in commercial and closed-source products without releasing your
+own source. Attribution obligations travel with your binary.
 
-The sibling adapter libraries above (and the native stack they pull in — SDL3,
-vulkan-zig, VMA, volk, shaderc) stay under their **own** permissive licenses
-(MIT / Zlib / Apache-2.0), and zGameLib links rather than vendors them, so those
-attribution obligations travel with your binary too.
+The sibling libraries and their native dependencies (SDL3, vulkan-zig, VMA, volk,
+shaderc) stay under their own permissive licenses (MIT / Zlib / Apache-2.0).
 
-**👉 Consuming zGameLib in your own project? Read [`LICENSING.md`](LICENSING.md)** —
-it has the full dependency license map and a step-by-step compliance checklist.
+**👉 Consuming zGameLib? Read [`LICENSING.md`](LICENSING.md)** — full dependency
+license map + compliance checklist.
