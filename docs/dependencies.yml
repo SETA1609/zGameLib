@@ -1,0 +1,204 @@
+# zGameLib dependencies (Tier 1)
+# Source of truth for Zig deps: build.zig.zon
+# Status: shipped | partial | optional | planned
+
+meta:
+  version: 1
+  updated: "2026-07-15"
+  project: zGameLib
+  tier: 1
+  repository: SETA1609/zGameLib
+  manifest: build.zig.zon
+
+consumes:
+  zig_packages:
+    - id: platform
+      zon_name: platform
+      package: zig-cpp-platform-stack-adapter
+      path: libs/zig-cpp-platform-stack-adapter
+      kind: git_submodule
+      status: shipped
+      role: Windowing, input, time, native handles (SDL3 backend)
+      module: zgame.platform
+      license: MIT
+
+    - id: vulkan_stack
+      zon_name: vulkan_stack
+      package: zig-cpp-vulkan-stack-adapter
+      path: libs/zig-cpp-vulkan-stack-adapter
+      kind: git_submodule
+      status: shipped
+      role: Vulkan stack — vk, volk, VMA, shaderc (opt-in)
+      module: zgame.vulkan_stack
+      license: MIT
+
+    - id: zclip
+      zon_name: zclip
+      package: zClip
+      path: libs/zClip
+      kind: git_submodule
+      status: partial
+      role: Animation — sprite-atlas (v0.6 shipped) + skeletal/glTF (in progress)
+      module: zgame.zclip
+      license: MIT
+
+  native_transitive:
+    - id: sdl3
+      via: platform
+      upstream: castholm/SDL
+      status: shipped
+      role: Platform backend (window, events, input)
+      license: Zlib
+
+    - id: vulkan_zig
+      via: vulkan_stack
+      upstream: Snektron/vulkan-zig
+      status: shipped
+      role: Typed Vulkan API bindings
+      license: MIT
+
+    - id: vulkan_headers
+      via: vulkan_stack
+      upstream: KhronosGroup/Vulkan-Headers
+      status: shipped
+      role: vk.xml registry for code generation
+      license: Apache-2.0 OR MIT
+
+    - id: vma
+      via: vulkan_stack
+      upstream: GPUOpen/VulkanMemoryAllocator
+      status: shipped
+      role: GPU memory allocator (C++ bridge)
+      license: MIT
+
+    - id: volk
+      via: vulkan_stack
+      upstream: "(pure Zig reimplementation in adapter)"
+      status: shipped
+      role: Vulkan loader
+      license: MIT
+
+    - id: shaderc
+      via: vulkan_stack
+      upstream: tiawl/shaderc.zig
+      status: optional
+      build_flag: "-Dshaderc"
+      role: GLSL/HLSL → SPIR-V at runtime
+      license: Apache-2.0
+
+    - id: cgltf
+      via: zclip
+      upstream: jkuhlmann/cgltf
+      status: planned
+      role: glTF ingestion for skeletal path (vendored C in-tree)
+      license: MIT
+
+  planned_zig_packages:
+    - id: zaudio
+      package: zaudio
+      status: planned
+      role: Audio playback + streaming bridge
+      backend: miniaudio
+      module: zgame.zaudio
+
+    - id: zassets
+      package: zassets
+      status: planned
+      role: Asset loading / VFS
+      module: zgame.zassets
+
+    - id: zmath
+      package: zmath
+      status: planned
+      role: SIMD-friendly math types
+      module: zgame.zmath
+
+    - id: zimgui
+      package: Dear ImGui
+      status: planned
+      phase: late
+      build_flag: "-DimGui"
+      role: Optional immediate-mode UI — Vulkan + SDL3 backends (after 2D batcher)
+      module: zgame.zimgui
+      license: MIT
+      doc: docs/imgui.md
+      policy: >
+        Late optional module. Required by Nexus Crucible (v1.1.0+).
+        Not in default builds. Fonts (zfont) ship after zimgui.
+
+    - id: zfont
+      package: (FreeType + HarfBuzz optional)
+      status: planned
+      phase: late
+      role: Font rendering / shaping — after zimgui
+      module: zgame.zfont
+      policy: Optional; Nexus TextServer consumes; not localization
+
+  planned_native_transitive:
+    - id: imgui
+      via: zimgui
+      upstream: ocornut/imgui
+      status: planned
+      role: Dear ImGui core + SDL3/Vulkan backends
+      license: MIT
+      build_flag: "-DimGui"
+
+consumed_by:
+  - id: nexus_engine
+    name: Nexus-engine
+    tier: 2
+    alias: Forge
+    relationship: primary_downstream
+    status: shipped
+    resolution:
+      kind: path
+      zon_key: zgame
+      path: ../zGameLib
+    consumes_module: zgame
+    repository: SETA1609/Nexus-engine
+    layout: ../Nexus-engine/docs/file-tree.yml
+    dependencies_doc: ../Nexus-engine/docs/dependencies.yml
+
+  - id: example_ladder
+    name: zGameLib examples
+    tier: internal
+    relationship: reference_consumers
+    status: shipped
+    resolution:
+      kind: build_step
+      note: "Each example links only the zgame artifacts it needs"
+    examples:
+      - event-logger
+      - clear-color
+      - clear-color-2
+      - hello-triangle
+      - animation-demo
+      - audio-demo
+      - asset-demo
+      - app-demo
+
+  - id: crucible
+    name: Link-editor (Crucible)
+    tier: 3
+    relationship: editor_consumer
+    status: planned
+    note: Hard-depends on zgame.zimgui (-DimGui=true); see Nexus-engine dependencies.yml
+
+  - id: external_games
+    name: Third-party Zig games / tools
+    tier: external
+    relationship: optional_consumers
+    status: open
+    note: Any project may depend on zGameLib directly without Nexus-engine
+
+policy:
+  pay_for_what_you_use: true
+  no_gpl_lgpl_agpl: true
+  raw_access_always: true
+  submodule_init: git submodule update --init --recursive
+  macos:
+    in_scope: true
+    deferred: false
+    behavior_source: Redot clean-room study (Cocoa/Metal/MoltenVK hand-off)
+    maintainer_ci: build/compile in container VM pipelines (macos-latest)
+    contributor_testing: runtime and display validation on real macOS hardware required for macOS-specific PRs

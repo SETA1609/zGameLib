@@ -1,15 +1,15 @@
-# Getting started — examples repo
+# Getting started — modular example ladder
 
-This repo consumes the two adapters **together** the way a real engine would:
-each lib builds once into a static artifact, the apps link the artifacts. It
-doubles as the integration-test bed for the platform↔vulkan hand-off.
+This repo demonstrates the **pay-for-what-you-use** architecture: each example
+imports only the sibling libraries it needs. The modular ladder lets you start
+minimal and add capabilities one at a time.
 
-**Requires Zig 0.16+** (a display server + a Vulkan loader for the windowed/
+**Requires Zig 0.16+** (a display server + a Vulkan loader for the windowed /
 integration bits).
 
 ## 1. Clone with submodules
 
-The adapters live under `libs/` as git submodules:
+The sibling libraries live under `libs/` as git submodules:
 
 ```sh
 git clone https://github.com/SETA1609/zGameLib.git
@@ -21,58 +21,51 @@ git submodule update --init --recursive
 
 ```sh
 zig build --help              # list steps
-zig build event-logger        # rung 0 — platform-only example
-zig build clear-color         # rung 1 — windowed clear-color (needs a display + Vulkan loader)
+zig build event-logger        # rung 0 — platform-only example (no vulkan)
+zig build clear-color         # rung 1 — platform + vulkan (raw surface hand-off)
+zig build clear-color-2       # rung 2 — same app on zGameLib abstractions
 zig build test-integration    # cross-lib tests: platform handles → vulkan instance + surface
 ```
 
-- `event-logger` is **rung 0** (platform-only; the `nm` decoupling baseline) —
-  implemented. See [`event-logger.md`](event-logger.md) and the platform lib's
-  `docs/getting-started.md`.
-- `clear-color` is **rung 1** (platform + vulkan together) — implemented: a window
-  whose swapchain image is cleared each frame to a cycling palette, recreated on
-  resize. See [`clear-color.md`](clear-color.md).
-- `test-integration` today: instance from the platform's extensions, the surface
-  hand-off, and the full stack (window → instance → surface → device → VMA
-  allocator). Add `-Dshaderc` to also run the shaderc GLSL→SPIR-V cross-stack
-  test (off by default — it builds shaderc from source).
+- **event-logger** — rung 0, platform only. The `nm` decoupling baseline.
+  Imported module: `zgame_platform` (no `vulkan_stack`). See
+  [`event-logger.md`](event-logger.md).
 
-## 2a. Reproducible runs (scripts + Docker)
+- **clear-color** — rung 1, platform + vulkan together, raw surface hand-off.
+  Imported modules: `platform` + `vulkan_stack` + `surface` + `swapchain`.
+  See [`clear-color.md`](clear-color.md).
 
-The CI gates live in **`scripts/ci.sh`** so you can run exactly what CI runs,
-locally:
+- **clear-color-2** — rung 2, same behaviour on `zgame.Gpu` + `zgame.FrameRing`.
+  Imported module: full `zgame`. ~130 lines of boilerplate moved into the
+  middleware. See [`clear-color.md`](clear-color.md).
 
-```sh
-./scripts/ci.sh              # fmt + build both rungs
-./scripts/ci.sh decoupling   # nm: the platform-only binary has zero Vulkan symbols
-./scripts/ci.sh integration  # cross-lib test-integration -Dshaderc (auto-xvfb when headless)
-```
+- **Animation examples** (sprite-showcase, gltf-viewer, animation-browser,
+  run-cycle) ship alongside the main ladder through the zClip animation lib.
+  See [`ladder.md`](ladder.md) § Animation track.
 
-For a clean-room environment, the repo ships a **Dockerfile** (build from a
-checkout *with submodules*):
+## 2a. What each rung links
 
-```sh
-git submodule update --init --recursive
-docker build -t stack-examples .
-docker run --rm stack-examples                                 # fmt + build
-docker run --rm stack-examples bash scripts/ci.sh integration  # headless via lavapipe + xvfb
-```
+| Rung | Example | Linked libraries |
+|------|---------|-----------------|
+| 0 | event-logger | `platform` artifact only |
+| 1 | clear-color | `platform` + `vulkan_stack` artifacts |
+| 2 | clear-color-2 | `platform` + `vulkan_stack` artifacts (via `zgame`) |
 
-The image carries both halves' runtime deps (X11/Wayland + xvfb for the window,
-lavapipe + libvulkan for a GPU-less Vulkan device). CI also runs a
-`lint-workflows` job that validates every workflow YAML (this repo's + both
-libs') with the bundled [`check-workflows` skill](../../.claude/skills/check-workflows).
+The difference between rung 0 and rung 1 is visible at the binary level:
+`nm event-logger` shows **zero** Vulkan-stack symbols.
 
 ## 3. The build model — libs first, link the artifact
 
-`build.zig.zon` references the libs by **local path** (no git fetch); `build.zig`
-imports each lib's **module** and links its **static-library artifact**, so the
-heavy C/C++ (SDL3, the Vulkan stack) compiles once inside the lib and is reused
-across apps. Full rationale: [`../../libs/README.md`](../../libs/README.md).
+`build.zig.zon` references the sibling libs by **local path** (no git fetch);
+`build.zig` imports each lib's **module** and links its **static-library
+artifact**, so the heavy C/C++ (SDL3, the Vulkan stack) compiles once inside
+the lib and is reused across examples. Only the libs actually needed by each
+example are linked.
 
 ## 4. The cross-lib hand-off (the whole point)
 
-The two libs share **no type** — they meet only at raw OS primitives:
+The platform and vulkan libs share **no type** — they meet only at raw OS
+primitives:
 
 ```
 platform.Window.create(.{ .renderer = .vulkan })
@@ -86,25 +79,20 @@ platform.Window.create(.{ .renderer = .vulkan })
                                    a non-null VkSurfaceKHR
 ```
 
-`tests/integration_test.zig` is this handshake, end to end — read it as the
-canonical "two libs together" example. `shared/surface.zig` is the comptime,
-per-OS bridge that picks the right `get*Handle` → `create*Surface` pair, and
-`clear-color` drives the whole hand-off in a real windowed app.
+This seam is the only point of contact between the two sibling libs.
 
 ## 5. The ladder
 
-Apps are built in a fixed order; each pulls a specific lib milestone into
-existence. See [`ladder.md`](ladder.md) for all rungs and
-[`ROADMAP.md`](ROADMAP.md) for the release sequence. Rung 0 (event-logger) and
-rung 1 (clear-color) are the Foundation phase — both implemented and building;
-the remaining work for the v0.1.0 tag is the `nm` decoupling checks + CI.
+Examples are built in a fixed order; each adds exactly one capability.
+See [`ladder.md`](ladder.md) for all rungs and [`ROADMAP.md`](ROADMAP.md) for
+the release sequence.
 
 ## 6. The decoupling checks (`nm`)
 
-Two gates the apps exist to prove (see [`ladder.md`](ladder.md)):
+Two gates the examples exist to prove (see [`ladder.md`](ladder.md)):
 
-- a platform-only binary (`renderer = .none`) shows **zero `vk*` / `VK_`** symbols;
-- a headless-Vulkan binary shows **zero `SDL_` / `x11` / `wayland`** symbols.
+- a platform-only binary (`renderer = .none`) shows **zero** of our Vulkan stack symbols;
+- a headless-Vulkan binary shows **zero** windowing symbols.
 
 ## Next
 

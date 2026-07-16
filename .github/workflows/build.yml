@@ -37,8 +37,10 @@ jobs:
   build:
     name: build · ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    # macOS is contributor-led (the author has no mac hardware): keep it visible
-    # but non-blocking, so a mac-only break never gates a merge.
+    # macOS is in scope (Redot-informed Cocoa/Metal path), not deferred.
+    # Maintainer CI: compile/build in the macOS VM pipeline only.
+    # Runtime/display validation is contributor-owned on real hardware — keep
+    # macOS visible but non-blocking so a mac-only runtime break never gates Linux/Win.
     continue-on-error: ${{ matrix.os == 'macos-latest' }}
     strategy:
       fail-fast: false

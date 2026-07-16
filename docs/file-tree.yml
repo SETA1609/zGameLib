@@ -1,0 +1,182 @@
+# zGameLib repository layout (Tier 1)
+# Status values: shipped | partial | stub | planned | legacy
+
+meta:
+  version: 1
+  updated: "2026-07-15"
+  project: zGameLib
+  tier: 1
+  repository: SETA1609/zGameLib
+  role: Foundation middleware — platform, Vulkan, optional helpers
+
+tree:
+  - path: build.zig
+    type: file
+    status: shipped
+    description: Build entry — re-export module + linked lib artifacts
+
+  - path: build.zig.zon
+    type: file
+    status: shipped
+    description: Dependency manifest (sibling libs as git submodules)
+
+  - path: LICENSE
+    type: file
+    status: shipped
+    description: Apache-2.0
+
+  - path: NOTICE
+    type: file
+    status: shipped
+    description: Attribution notices for distributions
+
+  - path: LICENSING.md
+    type: file
+    status: shipped
+    description: Practical Apache-2.0 compliance guide
+
+  - path: src/
+    type: directory
+    description: Framework modules
+    children:
+      - path: root.zig
+        type: file
+        status: shipped
+        description: Full `zgame` module — re-exports + helpers
+      - path: root_platform.zig
+        type: file
+        status: shipped
+        description: Platform-only `zgame_platform` module (no Vulkan)
+      - path: app.zig
+        type: file
+        status: stub
+        description: Optional `zgame.App` harness (middleware loop)
+
+  - path: shared/
+    type: directory
+    description: Optional middleware helpers (composable policy)
+    children:
+      - path: surface.zig
+        type: file
+        status: shipped
+        description: Comptime platform↔Vulkan surface bridge
+      - path: swapchain.zig
+        type: file
+        status: shipped
+        description: Reusable swapchain (format/present/recreate)
+      - path: gpu.zig
+        type: file
+        status: shipped
+        description: Vulkan bring-up (`Gpu`)
+      - path: frame.zig
+        type: file
+        status: shipped
+        description: Frames-in-flight ring (`FrameRing`)
+      - path: animation.zig
+        type: file
+        status: stub
+        description: Unified animation API over zClip
+
+  - path: examples/
+    type: directory
+    description: >
+      Incremental example ladder — reference apps, NOT part of the default
+      `zgame` artifact. Each rung adds one capability; build via
+      `zig build <example>`.
+    children:
+      - path: event-logger/
+        type: directory
+        status: shipped
+        description: Rung 0 — platform only (no Vulkan)
+      - path: clear-color/
+        type: directory
+        status: shipped
+        description: Rung 1 — platform + Vulkan (raw surface hand-off)
+      - path: clear-color-2/
+        type: directory
+        status: shipped
+        description: Rung 2 — same app on Gpu/FrameRing helpers
+      - path: hello-triangle/
+        type: directory
+        status: partial
+        description: Rung 2+ — first pipeline + VMA vertex buffer
+      - path: animation-demo/
+        type: directory
+        status: stub
+        description: Rung 3 — zClip animation
+      - path: audio-demo/
+        type: directory
+        status: stub
+        description: Rung 4 — zaudio (planned)
+      - path: asset-demo/
+        type: directory
+        status: stub
+        description: Rung 5 — zassets (planned)
+      - path: app-demo/
+        type: directory
+        status: stub
+        description: Rung 6 — zgame.App middleware
+
+  - path: docs/
+    type: directory
+    description: Project documentation
+    children:
+      - path: ROADMAP.md
+        type: file
+        status: shipped
+      - path: reference.md
+        type: file
+        status: shipped
+      - path: imgui.md
+        type: file
+        status: planned
+        description: Optional Dear ImGui bridge (-DimGui build flag)
+      - path: file-tree.yml
+        type: file
+        status: shipped
+        description: Repository layout (this file)
+      - path: dependencies.yml
+        type: file
+        status: shipped
+        description: Zig packages, native transitive deps, consumers
+      - path: theory/
+        type: directory
+        status: shipped
+        description: Beginner theory guides (01–07)
+      - path: examples/
+        type: directory
+        status: shipped
+        description: Per-example design docs, ladder, vision/mission
+
+  - path: libs/
+    type: directory
+    description: Sibling libraries (git submodules)
+    children:
+      - path: zig-cpp-platform-stack-adapter/
+        type: directory
+        status: shipped
+        description: Windowing + input (SDL3 backend)
+      - path: zig-cpp-vulkan-stack-adapter/
+        type: directory
+        status: shipped
+        description: Vulkan stack (vk + volk + VMA + shaderc)
+      - path: zClip/
+        type: directory
+        status: partial
+        description: Animation lib — sprite-atlas v0.6 shipped; skeletal/glTF in progress
+
+  - path: tests/
+    type: directory
+    description: Framework contract / integration tests
+    children:
+      - path: gpu_test.zig
+        type: file
+        status: shipped
+        description: TDD spec for Gpu/FrameRing abstractions
+      - path: integration_test.zig
+        type: file
+        status: shipped
+      - path: opengl_test.zig
+        type: file
+        status: legacy
+        description: Deprecated GL path — not the primary renderer

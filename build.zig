@@ -25,6 +25,7 @@ pub fn build(b: *std.Build) void {
 
     const platform_dep = b.dependency("platform", .{ .target = target, .optimize = optimize });
     const vulkan_dep = b.dependency("vulkan_stack", .{ .target = target, .optimize = optimize, .shaderc = enable_shaderc });
+    const zclip_dep = b.dependency("zclip", .{ .target = target, .optimize = optimize });
 
     // Shared glue (renderer policy the libs leave to the consumer): the comptime
     // surface bridge + a reusable swapchain.
@@ -63,6 +64,15 @@ pub fn build(b: *std.Build) void {
     frame_mod.addImport("vulkan_stack", vulkan_dep.module("vulkan_stack"));
     frame_mod.addImport("swapchain", swapchain_mod);
 
+    // Animation abstraction (the unified timeline/playback API lifted over the
+    // raw zclip lib). Same tier as gpu/frame — framework glue over a lib.
+    const animation_mod = b.createModule(.{
+        .root_source_file = b.path("shared/animation.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    animation_mod.addImport("zclip", zclip_dep.module("zclip"));
+
     // The framework module — re-exports the building blocks + the glue.
     const zgame_mod = b.addModule("zgame", .{
         .root_source_file = b.path("src/root.zig"),
@@ -75,8 +85,11 @@ pub fn build(b: *std.Build) void {
     zgame_mod.addImport("swapchain", swapchain_mod);
     zgame_mod.addImport("gpu", gpu_mod);
     zgame_mod.addImport("frame", frame_mod);
+    zgame_mod.addImport("zclip", zclip_dep.module("zclip"));
+    zgame_mod.addImport("animation", animation_mod);
     zgame_mod.linkLibrary(platform_dep.artifact("platform"));
     zgame_mod.linkLibrary(vulkan_dep.artifact("vulkan_stack"));
+    zgame_mod.linkLibrary(zclip_dep.artifact("zclip"));
 
     // The **platform-only** flavour of the framework — re-exports `platform` and
     // links ONLY the platform artifact (drags no vulkan). Consumers whose binary
@@ -188,7 +201,57 @@ pub fn build(b: *std.Build) void {
     addExample(b, .{
         .name = "clear-color-2",
         .source = "examples/clear-color-2/main.zig",
-        .description = "Build + run clear-color rebuilt on the zGameLib abstractions",
+        .description = "Build + run clear-color rebuilt on the zGameLib abstractions (rung 2)",
+        .target = target,
+        .optimize = optimize,
+        .zgame_mod = zgame_mod,
+    }, &example_exes);
+
+    // Rung 2+: hello-triangle (first pipeline + vertex buffer)
+    addExample(b, .{
+        .name = "hello-triangle",
+        .source = "examples/hello-triangle/main.zig",
+        .description = "Build + run the hello-triangle example (first pipeline + VMA buffer)",
+        .target = target,
+        .optimize = optimize,
+        .zgame_mod = zgame_mod,
+    }, &example_exes);
+
+    // Rung 3: animation-demo (zClip) — stub until zClip is ready
+    addExample(b, .{
+        .name = "animation-demo",
+        .source = "examples/animation-demo/main.zig",
+        .description = "Build + run the animation demo (stub until zClip is ready)",
+        .target = target,
+        .optimize = optimize,
+        .zgame_mod = zgame_mod,
+    }, &example_exes);
+
+    // Rung 4: audio-demo (zaudio) — stub until zaudio exists
+    addExample(b, .{
+        .name = "audio-demo",
+        .source = "examples/audio-demo/main.zig",
+        .description = "Build + run the audio demo (stub - zaudio does not exist yet)",
+        .target = target,
+        .optimize = optimize,
+        .zgame_mod = zgame_mod,
+    }, &example_exes);
+
+    // Rung 5: asset-demo (zassets) — stub until zassets exists
+    addExample(b, .{
+        .name = "asset-demo",
+        .source = "examples/asset-demo/main.zig",
+        .description = "Build + run the asset demo (stub - zassets does not exist yet)",
+        .target = target,
+        .optimize = optimize,
+        .zgame_mod = zgame_mod,
+    }, &example_exes);
+
+    // Rung 6: app-demo (zgame.App) — stub until App harness is ready
+    addExample(b, .{
+        .name = "app-demo",
+        .source = "examples/app-demo/main.zig",
+        .description = "Build + run the app harness demo (stub - App not yet implemented)",
         .target = target,
         .optimize = optimize,
         .zgame_mod = zgame_mod,
