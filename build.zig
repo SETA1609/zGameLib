@@ -267,6 +267,31 @@ pub fn build(b: *std.Build) void {
     //     .zgame_mod = zgame_mod,
     // }, &example_exes);
 
+    // --- Pipeline DAG steps for topological build orchestration ---
+    const platform_step = b.step("build-platform",
+        "Build zig-cpp-platform-stack-adapter (adapter lib)");
+    platform_step.dependOn(&platform_dep.builder.install_tls.step);
+
+    const vulkan_stack_step = b.step("build-vulkan_stack",
+        "Build zig-cpp-vulkan-stack-adapter (adapter lib)");
+    vulkan_stack_step.dependOn(&vulkan_dep.builder.install_tls.step);
+
+    const zclip_step = b.step("build-zclip",
+        "Build zClip (animation data lib)");
+    zclip_step.dependOn(&zclip_dep.builder.install_tls.step);
+
+    const framework_step = b.step("build-framework",
+        "Build the zGameLib framework module");
+    framework_step.dependOn(platform_step);
+    framework_step.dependOn(vulkan_stack_step);
+    framework_step.dependOn(zclip_step);
+
+    const pipeline_step = b.step("pipeline",
+        "Full pipeline: adapter libs → framework");
+    pipeline_step.dependOn(framework_step);
+
+    b.default_step = pipeline_step;
+
     // --- `zig build dev`: framework + examples + tests — the full dev command ---
     const dev_step = b.step("dev", "Build framework + examples + run all tests");
     dev_step.dependOn(b.default_step);
