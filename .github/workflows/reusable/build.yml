@@ -1,0 +1,46 @@
+name: Reusable Build (zGameLib)
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        description: 'zig build step'
+        required: false
+        default: 'pipeline'
+        type: string
+      os:
+        description: 'OS runner'
+        required: false
+        default: 'ubuntu-latest'
+        type: string
+      with-display:
+        description: 'Set up Xvfb + Mesa for display tests'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build:
+    name: ${{ inputs.target }} · ${{ inputs.os }}
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+          use-cache: true
+
+      - run: zig version
+
+      - name: Install display deps
+        if: inputs.with-display
+        run: |
+          sudo apt-get update && sudo apt-get install -y xvfb mesa-utils libgl1-mesa-dri \
+            libglx-mesa0 libvulkan1 mesa-vulkan-drivers
+
+      - name: Build
+        run: zig build ${{ inputs.target }}
