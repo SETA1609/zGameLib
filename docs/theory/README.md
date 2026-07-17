@@ -84,6 +84,9 @@ Read them in this order — each builds on the last:
 | 05 | [`05-the-swapchain.md`](05-the-swapchain.md) | the ring of images you present to the screen; format/present-mode/resize policy |
 | 06 | [`06-the-frame-ring.md`](06-the-frame-ring.md) | frames-in-flight; fences vs. semaphores; acquire → render → present |
 | 07 | [`07-the-app-harness.md`](07-the-app-harness.md) | the top-level `App` loop, and when *not* to use it |
+| 08 | [`08-hot-reload.md`](08-hot-reload.md) | hot reload at the foundation level — rebuild primitives, typed hooks, what Tier 1 does (and doesn't) reload |
+| 09 | [`09-hazel-hazelnut-split.md`](09-hazel-hazelnut-split.md) | the Hazel/Hazelnut split — what it means for Tier 1 (keeping zGameLib engine-agnostic) |
+| 10 | [`10-web-backend-strategy.md`](10-web-backend-strategy.md) | WebGPU as the web graphics backend — optional sibling module alongside Vulkan |
 
 > **Two companion docs already live next to the code.** The framework ships
 > [`shared/gpu.md`](../../shared/gpu.md) and [`shared/frame.md`](../../shared/frame.md)
@@ -116,5 +119,7 @@ Keep both phrases in mind; they explain every design choice you'll meet.
   (the framework layer documented here).
 - **Khronos Vulkan specification** — <https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html>
 - **SDL3 wiki** — <https://wiki.libsdl.org/SDL3/>
+- **Nexus-engine hot reload** — upstream [08-hot-reload-nexus-engine.md](../../../docs/theory/08-hot-reload-nexus-engine.md) (Tier 2 consumer)
+- **Hazel/Hazelnut split** — upstream [10-hazel-hazelnut-split.md](../../../docs/theory/10-hazel-hazelnut-split.md) and local [09-hazel-hazelnut-split.md](09-hazel-hazelnut-split.md) (Tier 1 perspective)
 
 Quoted excerpts are © their respective owners, used here for teaching/commentary.
