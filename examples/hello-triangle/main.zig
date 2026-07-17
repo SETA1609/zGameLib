@@ -73,9 +73,9 @@ pub fn main() !void {
     }
     defer for (framebuffers[0..fb_count]) |fb| gpu.vkd.destroyFramebuffer(gpu.device, fb, null);
 
-    // Load embedded SPIR-V shaders.
-    const vert_code = @as([]const u32, @ptrCast(@alignCast(@embedFile("shaders/triangle.vert.spv"))));
-    const frag_code = @as([]const u32, @ptrCast(@alignCast(@embedFile("shaders/triangle.frag.spv"))));
+    // Load compiled SPIR-V shaders (built by glslc via build.zig).
+    const vert_code = @as([]const u32, @ptrCast(@alignCast(@import("shaders/triangle.vert.spv"))));
+    const frag_code = @as([]const u32, @ptrCast(@alignCast(@import("shaders/triangle.frag.spv"))));
 
     const vert_mod = try gpu.vkd.createShaderModule(gpu.device, &.{
         .code_size = vert_code.len * @sizeOf(u32),

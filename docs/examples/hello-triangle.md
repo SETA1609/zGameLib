@@ -55,16 +55,17 @@ here and ship.
 
 ## Shaders
 
-Shaders are compiled offline from GLSL to SPIR-V and embedded in the binary at
-compile time via `@embedFile`. The GLSL sources live alongside the example in
-`shaders/` for reference. To regenerate:
+Shaders are compiled from GLSL to SPIR-V by the build system via `glslc` (Vulkan SDK)
+when the `hello-triangle` example is built. The compiled shaders are imported into
+the binary via anonymous imports (`@import`). The GLSL sources live alongside the
+example in `shaders/` for reference.
+
+To regenerate the shaders manually:
 
 ```sh
-glslangValidator -V examples/hello-triangle/shaders/triangle.vert.glsl -o examples/hello-triangle/shaders/triangle.vert.spv
-glslangValidator -V examples/hello-triangle/shaders/triangle.frag.glsl -o examples/hello-triangle/shaders/triangle.frag.spv
+glslc examples/hello-triangle/shaders/triangle.vert.glsl -o examples/hello-triangle/shaders/triangle.vert.spv
+glslc examples/hello-triangle/shaders/triangle.frag.glsl -o examples/hello-triangle/shaders/triangle.frag.spv
 ```
-
-Alternatively, the project's `scripts/gen-spv.py` generates the SPIR-V directly.
 
 ## Done when
 
@@ -76,7 +77,7 @@ Alternatively, the project's `scripts/gen-spv.py` generates the SPIR-V directly.
 ## Build
 
 ```sh
-zig build hello-triangle    # needs a display + Vulkan driver
+zig build hello-triangle    # needs a display + Vulkan driver + glslc (Vulkan SDK)
 ```
 
 ## If you want to go raw
