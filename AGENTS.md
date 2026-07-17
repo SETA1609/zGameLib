@@ -11,6 +11,11 @@ zig build examples     # build all examples (opt-in)
 
 Requires Zig **0.16.0**.
 
+## Architecture decisions
+
+Locked-in decisions at [`docs/architecture-decisions.md`](docs/architecture-decisions.md):
+comptime foundation tier, script encapsulation for CI.
+
 ## Docker development
 
 ```sh
