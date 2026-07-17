@@ -30,3 +30,4 @@ comptime foundation tier, script encapsulation for CI.
 
 Reusable workflow: `.github/workflows/reusable/build.yml`.
 Main CI: `.github/workflows/build.yml` — builds framework + display tests.
+Auto-rebase: `.github/workflows/rebase-branches.yml` — on push to main, rebases all branches onto it (skips conflicts, logs failures).
