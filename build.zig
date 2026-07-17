@@ -17,8 +17,9 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // Collect example executables so `zig build dev` can install + compile-check them.
+    // Collect example executables and their compile steps.
     var example_exes: std.ArrayList(*std.Build.Step.Compile) = .empty;
+    var example_steps: std.ArrayList(*std.Build.Step) = .empty;
 
     // Pass through to the vulkan stack: runtime GLSL→SPIR-V (shaderc), off by default.
     const enable_shaderc = b.option(bool, "shaderc", "Build the vulkan stack with runtime shaderc (GLSL→SPIR-V)") orelse false;
@@ -172,100 +173,133 @@ pub fn build(b: *std.Build) void {
     tdd.dependOn(gltest_step);
     tdd.dependOn(gputest_step);
 
-    // --- Examples: consumers of the framework, NOT part of the library -------
+    // --- Examples: consumers of the framework, opt-in (not built by default) ---
     // Each example is a standalone executable that imports `zgame` or
     // `zgame_platform`. They live in `examples/` which is excluded from
     // `.paths` in `build.zig.zon`.
+    //
+    // Examples are NEVER built or installed by the default `zig build` or
+    // `zig build pipeline`. Use `zig build examples` to build all of them,
+    // or `zig build <name>` for a specific one. Shader compilation via
+    // `glslc` (from the Vulkan SDK) only runs when an example that needs
+    // shaders is requested.
 
     // Rung 0: event-logger (platform-only, no vulkan)
-    addExample(b, .{
+    example_steps.append(b.allocator, addExample(b, .{
         .name = "event-logger",
         .source = "examples/event-logger/main.zig",
         .description = "Build + run the platform-only event logger (rung 0)",
         .target = target,
         .optimize = optimize,
         .zgame_mod = zgame_platform_mod,
-    }, &example_exes);
+    }, &example_exes)) catch @panic("OOM");
 
     // Rung 1: clear-color (full framework)
-    addExample(b, .{
+    example_steps.append(b.allocator, addExample(b, .{
         .name = "clear-color",
         .source = "examples/clear-color/main.zig",
         .description = "Build + run the reactive clear-color example (rung 1)",
         .target = target,
         .optimize = optimize,
         .zgame_mod = zgame_mod,
-    }, &example_exes);
+    }, &example_exes)) catch @panic("OOM");
 
     // Rung 1, reprise: clear-color-2 (built on zGameLib abstractions)
-    addExample(b, .{
+    example_steps.append(b.allocator, addExample(b, .{
         .name = "clear-color-2",
         .source = "examples/clear-color-2/main.zig",
         .description = "Build + run clear-color rebuilt on the zGameLib abstractions (rung 2)",
         .target = target,
         .optimize = optimize,
         .zgame_mod = zgame_mod,
-    }, &example_exes);
+    }, &example_exes)) catch @panic("OOM");
 
-    // Rung 2+: hello-triangle (first pipeline + vertex buffer)
-    addExample(b, .{
-        .name = "hello-triangle",
-        .source = "examples/hello-triangle/main.zig",
-        .description = "Build + run the hello-triangle example (first pipeline + VMA buffer)",
-        .target = target,
-        .optimize = optimize,
-        .zgame_mod = zgame_mod,
-    }, &example_exes);
+    // Rung 2+: hello-triangle (first pipeline + vertex buffer) — with shader compilation
+    {
+        const exe = b.addExecutable(.{
+            .name = "hello-triangle",
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("examples/hello-triangle/main.zig"),
+                .target = target,
+                .optimize = optimize,
+            }),
+        });
+        exe.root_module.addImport("zgame", zgame_mod);
+
+        // Compile shaders via glslc (only when this example is built)
+        const vert_spv = addShader(b, "triangle.vert", b.path("examples/hello-triangle/shaders/triangle.vert.glsl"));
+        const frag_spv = addShader(b, "triangle.frag", b.path("examples/hello-triangle/shaders/triangle.frag.glsl"));
+        exe.root_module.addAnonymousImport("shaders/triangle.vert.spv", .{ .root_source_file = vert_spv });
+        exe.root_module.addAnonymousImport("shaders/triangle.frag.spv", .{ .root_source_file = frag_spv });
+
+        example_exes.append(b.allocator, exe) catch @panic("OOM");
+
+        const compile_step = b.step("hello-triangle", "Build + install the hello-triangle example (first pipeline + VMA buffer)");
+        compile_step.dependOn(&exe.step);
+        compile_step.dependOn(&b.addInstallArtifact(exe, .{}).step);
+        example_steps.append(b.allocator, compile_step) catch @panic("OOM");
+
+        const run = b.addRunArtifact(exe);
+        if (b.args) |args| run.addArgs(args);
+        b.step("run-hello-triangle", "Build + run the hello-triangle example")
+            .dependOn(&run.step);
+    }
 
     // Rung 3: animation-demo (zClip) — stub until zClip is ready
-    addExample(b, .{
+    example_steps.append(b.allocator, addExample(b, .{
         .name = "animation-demo",
         .source = "examples/animation-demo/main.zig",
         .description = "Build + run the animation demo (stub until zClip is ready)",
         .target = target,
         .optimize = optimize,
         .zgame_mod = zgame_mod,
-    }, &example_exes);
+    }, &example_exes)) catch @panic("OOM");
 
     // Rung 4: audio-demo (zaudio) — stub until zaudio exists
-    addExample(b, .{
+    example_steps.append(b.allocator, addExample(b, .{
         .name = "audio-demo",
         .source = "examples/audio-demo/main.zig",
         .description = "Build + run the audio demo (stub - zaudio does not exist yet)",
         .target = target,
         .optimize = optimize,
         .zgame_mod = zgame_mod,
-    }, &example_exes);
+    }, &example_exes)) catch @panic("OOM");
 
     // Rung 5: asset-demo (zassets) — stub until zassets exists
-    addExample(b, .{
+    example_steps.append(b.allocator, addExample(b, .{
         .name = "asset-demo",
         .source = "examples/asset-demo/main.zig",
         .description = "Build + run the asset demo (stub - zassets does not exist yet)",
         .target = target,
         .optimize = optimize,
         .zgame_mod = zgame_mod,
-    }, &example_exes);
+    }, &example_exes)) catch @panic("OOM");
 
     // Rung 6: app-demo (zgame.App) — stub until App harness is ready
-    addExample(b, .{
+    example_steps.append(b.allocator, addExample(b, .{
         .name = "app-demo",
         .source = "examples/app-demo/main.zig",
         .description = "Build + run the app harness demo (stub - App not yet implemented)",
         .target = target,
         .optimize = optimize,
         .zgame_mod = zgame_mod,
-    }, &example_exes);
+    }, &example_exes)) catch @panic("OOM");
 
     // color-logger (stub, full framework) — disabled until zgame.framework API lands
-    // addExample(b, .{
+    // example_steps.append(b.allocator, addExample(b, .{
     //     .name = "color-logger",
     //     .source = "examples/color-logger/color-loger.zig",
     //     .description = "Build + run the color-logger example",
     //     .target = target,
     //     .optimize = optimize,
     //     .zgame_mod = zgame_mod,
-    // }, &example_exes);
+    // }, &example_exes)) catch @panic("OOM");
+
+    // --- Examples step (opt-in: not part of default pipeline) ---
+    const examples_step = b.step("examples", "Build all examples (opt-in; shaders compiled via glslc from Vulkan SDK)");
+    for (example_steps.items) |cs| {
+        examples_step.dependOn(cs);
+    }
 
     // --- Pipeline DAG steps for topological build orchestration ---
     const platform_step = b.step("build-platform",
@@ -295,14 +329,20 @@ pub fn build(b: *std.Build) void {
 
     // --- `zig build dev`: framework + examples + tests — the full dev command ---
     const dev_step = b.step("dev", "Build framework + examples + run all tests");
-    dev_step.dependOn(b.default_step);
-    for (example_exes.items) |exe| {
-        dev_step.dependOn(&exe.step);
-        dev_step.dependOn(&b.addInstallArtifact(exe, .{}).step);
-    }
+    dev_step.dependOn(examples_step);
     dev_step.dependOn(itest_step);
     dev_step.dependOn(gltest_step);
     dev_step.dependOn(gputest_step);
+}
+
+/// Compile a GLSL shader to SPIR-V via `glslc` (Vulkan SDK).
+/// Returns a `LazyPath` to the compiled `.spv` file.
+fn addShader(b: *std.Build, name: []const u8, glsl_path: std.Build.LazyPath) std.Build.LazyPath {
+    const glslc = b.addSystemCommand(&.{"glslc"});
+    glslc.addArg("-o");
+    const spv_path = glslc.addOutputFileArg(b.fmt("{s}.spv", .{name}));
+    glslc.addFileArg(glsl_path);
+    return spv_path;
 }
 
 const ExampleOpts = struct {
@@ -315,7 +355,9 @@ const ExampleOpts = struct {
     zgame_mod: *std.Build.Module,
 };
 
-fn addExample(b: *std.Build, opts: ExampleOpts, exes: *std.ArrayList(*std.Build.Step.Compile)) void {
+/// Register an example executable + compile step + run step.
+/// Returns the compile step so callers can attach it to aggregating steps.
+fn addExample(b: *std.Build, opts: ExampleOpts, exes: *std.ArrayList(*std.Build.Step.Compile)) *std.Build.Step {
     const exe = b.addExecutable(.{
         .name = opts.name,
         .root_module = b.createModule(.{
@@ -338,4 +380,6 @@ fn addExample(b: *std.Build, opts: ExampleOpts, exes: *std.ArrayList(*std.Build.
     if (b.args) |args| run.addArgs(args);
     b.step(b.fmt("run-{s}", .{opts.name}), b.fmt("Build + run the {s} example", .{opts.name}))
         .dependOn(&run.step);
+
+    return compile_step;
 }
