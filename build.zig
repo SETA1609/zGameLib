@@ -212,50 +212,71 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
         .zgame_mod = zgame_mod,
-    }, &example_exes);
+    }, &example_exes)) catch @panic("OOM");
 
-    // Rung 2+: hello-triangle (first pipeline + vertex buffer)
-    addExample(b, .{
-        .name = "hello-triangle",
-        .source = "examples/hello-triangle/main.zig",
-        .description = "Build + run the hello-triangle example (first pipeline + VMA buffer)",
-        .target = target,
-        .optimize = optimize,
-        .zgame_mod = zgame_mod,
-    }, &example_exes);
+    // Rung 2+: hello-triangle (first pipeline + vertex buffer) — with shader compilation
+    {
+        const exe = b.addExecutable(.{
+            .name = "hello-triangle",
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("examples/hello-triangle/main.zig"),
+                .target = target,
+                .optimize = optimize,
+            }),
+        });
+        exe.root_module.addImport("zgame", zgame_mod);
+
+        // Compile shaders via glslc (only when this example is built)
+        const vert_spv = addShader(b, "triangle.vert", b.path("examples/hello-triangle/shaders/triangle.vert.glsl"));
+        const frag_spv = addShader(b, "triangle.frag", b.path("examples/hello-triangle/shaders/triangle.frag.glsl"));
+        exe.root_module.addAnonymousImport("shaders/triangle.vert.spv", .{ .root_source_file = vert_spv });
+        exe.root_module.addAnonymousImport("shaders/triangle.frag.spv", .{ .root_source_file = frag_spv });
+
+        example_exes.append(b.allocator, exe) catch @panic("OOM");
+
+        const compile_step = b.step("hello-triangle", "Build + install the hello-triangle example (first pipeline + VMA buffer)");
+        compile_step.dependOn(&exe.step);
+        compile_step.dependOn(&b.addInstallArtifact(exe, .{}).step);
+        example_steps.append(b.allocator, compile_step) catch @panic("OOM");
+
+        const run = b.addRunArtifact(exe);
+        if (b.args) |args| run.addArgs(args);
+        b.step("run-hello-triangle", "Build + run the hello-triangle example")
+            .dependOn(&run.step);
+    }
 
     // Rung 3: animation-demo (zClip) — stub until zClip is ready
-    addExample(b, .{
+    example_steps.append(b.allocator, addExample(b, .{
         .name = "animation-demo",
         .source = "examples/animation-demo/main.zig",
         .description = "Build + run the animation demo (stub until zClip is ready)",
         .target = target,
         .optimize = optimize,
         .zgame_mod = zgame_mod,
-    }, &example_exes);
+    }, &example_exes)) catch @panic("OOM");
 
     // Rung 4: audio-demo (zaudio) — stub until zaudio exists
-    addExample(b, .{
+    example_steps.append(b.allocator, addExample(b, .{
         .name = "audio-demo",
         .source = "examples/audio-demo/main.zig",
         .description = "Build + run the audio demo (stub - zaudio does not exist yet)",
         .target = target,
         .optimize = optimize,
         .zgame_mod = zgame_mod,
-    }, &example_exes);
+    }, &example_exes)) catch @panic("OOM");
 
     // Rung 5: asset-demo (zassets) — stub until zassets exists
-    addExample(b, .{
+    example_steps.append(b.allocator, addExample(b, .{
         .name = "asset-demo",
         .source = "examples/asset-demo/main.zig",
         .description = "Build + run the asset demo (stub - zassets does not exist yet)",
         .target = target,
         .optimize = optimize,
         .zgame_mod = zgame_mod,
-    }, &example_exes);
+    }, &example_exes)) catch @panic("OOM");
 
     // Rung 6: app-demo (zgame.App) — stub until App harness is ready
-    addExample(b, .{
+    example_steps.append(b.allocator, addExample(b, .{
         .name = "app-demo",
         .source = "examples/app-demo/main.zig",
         .description = "Build + run the app harness demo (stub - App not yet implemented)",
