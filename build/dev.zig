@@ -8,11 +8,10 @@
 //! Produces no output of its own — purely a DAG root.
 
 const std = @import("std");
-const Modules = @import("modules.zig").Modules;
 const ExampleExes = @import("examples.zig").ExampleExes;
 const TestSteps = @import("tests.zig").TestSteps;
 
-pub fn create(b: *std.Build, m: Modules, examples: ExampleExes, tests: TestSteps) void {
+pub fn create(b: *std.Build, examples: ExampleExes, tests: TestSteps) void {
     const framework_step = b.step("build-framework", "Build the zGameLib framework module");
 
     const pipeline_step = b.step("pipeline", "Full pipeline: adapter libs → framework");

@@ -31,5 +31,5 @@ pub fn build(b: *std.Build) void {
 
     const example_exes = examples.create(b, target, optimize, mods);
 
-    dev.create(b, mods, example_exes, test_steps);
+    dev.create(b, example_exes, test_steps);
 }
