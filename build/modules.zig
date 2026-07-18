@@ -1,3 +1,13 @@
+//! Step: module creation.
+//!
+//! Creates and wires all Zig modules used by the framework and its consumers:
+//! dependency resolution (platform, vulkan_stack), shared middleware modules
+//! (surface, swapchain, gpu, frame), and the top-level framework modules
+//! (zgame, zgame_platform).
+//!
+//! Output: `Modules` — a struct holding every module + dependency reference.
+//! Consumed by `tests.zig` and `examples.zig`.
+
 const std = @import("std");
 
 pub const Modules = struct {

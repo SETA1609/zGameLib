@@ -1,3 +1,12 @@
+//! Step: `zig build dev` orchestration.
+//!
+//! Composite step that depends on everything: default build, every example
+//! executable (compiled + installed), and the full test suite. This is the
+//! single step that proves the entire tree is green.
+//!
+//! Input: `ExampleExes` (from `examples.zig`), `TestSteps` (from `tests.zig`).
+//! Produces no output of its own — purely a DAG root.
+
 const std = @import("std");
 const Modules = @import("modules.zig").Modules;
 const ExampleExes = @import("examples.zig").ExampleExes;

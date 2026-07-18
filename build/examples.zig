@@ -1,3 +1,13 @@
+//! Step: example executables.
+//!
+//! Creates Zig executables for each example under `examples/`. Every example
+//! gets a compile-only step (`zig build <name>`) and a run step
+//! (`zig build run-<name>`). The framework's platform-only and full modules
+//! are wired as appropriate per example.
+//!
+//! Input: `Modules` (from `modules.zig`).
+//! Output: `ExampleExes` — compile artifact + step lists for the orchestrator.
+
 const std = @import("std");
 const Modules = @import("modules.zig").Modules;
 

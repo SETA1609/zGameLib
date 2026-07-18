@@ -1,3 +1,12 @@
+//! Step: test targets.
+//!
+//! Registers all test steps: unit analysis (refAllDecls), cross-lib integration,
+//! OpenGL hand-off, GPU abstraction spec, and the composite `test-tdd` suite.
+//! Each step is backed by a separate test binary with its own module imports.
+//!
+//! Input: `Modules` (from `modules.zig`).
+//! Output: `TestSteps` — the individual step references for DAG wiring.
+
 const std = @import("std");
 const Modules = @import("modules.zig").Modules;
 
