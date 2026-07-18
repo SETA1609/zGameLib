@@ -101,3 +101,7 @@ jobs:
       - name: Vulkan integration (lavapipe) — informational
         continue-on-error: true
         run: bash scripts/ci.sh integration
+
+      - name: Full test suite (test-tdd) — informational
+        continue-on-error: true
+        run: bash scripts/ci.sh tdd
