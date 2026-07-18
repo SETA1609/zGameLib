@@ -18,6 +18,31 @@ consumes the foundation to ship a **2D game at v1.0.0** before we invest in 3D d
 
 ---
 
+## July 2026 Update: Framework-Only Development Phase
+
+**Decision:** Focus exclusively on zGameLib (Tier 1 / Framework) for the foreseeable future. Nexus engine work is limited to minimal integration stubs and tests until the framework foundation is solid.
+
+### Rationale
+
+- The 2D pipeline (batcher, assets, audio) is the critical path to validating Nexus with a real 2D game.
+- Completing the framework first avoids the overhead of parallel engine development and ensures a rock-solid foundation.
+- See the [gap analysis](FRAMEWORK_GAP_ANALYSIS_AND_ROADMAP_UPDATE.md) for a detailed breakdown of current state vs. missing features.
+
+### Immediate Sprint Priorities
+
+1. Complete `hello-triangle` (robust pipeline, error handling).
+2. **Implement 2D batcher v0** — sprites, quads, atlas integration with zClip.
+3. Start/integrate `zassets` image decode + basic VFS.
+4. Expand example ladder (finish stubs for animation/audio).
+
+### Impact on Nexus
+
+- No heavy engine work until the framework 2D pipeline is proven.
+- Nexus integration limited to consuming framework APIs as they stabilise.
+- When the framework is solid, shift primary focus to Nexus.
+
+---
+
 ## 2D-first strategy
 
 | Principle | zGameLib response |
@@ -33,15 +58,19 @@ consumes the foundation to ship a **2D game at v1.0.0** before we invest in 3D d
 
 ---
 
-## Scope — what zGameLib is (and is not)
+## Architectural Boundaries: Framework vs Engine
 
-| In scope | Out of scope (Tier 2+ Nexus) |
-|----------|------------------------------|
-| Platform, Vulkan, `Gpu`, `FrameRing` | Scene graph, SceneNode, ECS |
-| **2D batcher**, decode, sprite draw 🎯 | Localization, `tr()`, servers |
-| Optional siblings: audio 🎯, assets 🎯, math | Crucible editor, `EditorHost` |
-| Late: ImGui 🔧, fonts 🔧 | WASM mod host, mod API |
-| Post-ship: 3D depth, glTF skeletal ⏳ | Physics, networking APIs |
+This separation is a core design principle, informed by Redot/Godot's layered architecture.
+
+| Layer | Responsibility | Owned by |
+| --- | --- | --- |
+| **Drivers / Adapters** | Low-level platform and graphics stack (SDL3, Vulkan, VMA, etc.). Replaceable backends. | zGameLib |
+| **Middleware Helpers** | Thin, opt-in convenience layers (Gpu, FrameRing, surface bridge, future 2D batcher, …). Re-export the raw layer. | zGameLib |
+| **Servers (opaque high-level managers)** | Opaque subsystems like RenderingServer, AudioServer, PhysicsServer — the "API backend" for scene-level code. | Nexus (Engine) |
+| **Scene / Node System** | Node tree, scene graph, entity composition. | Nexus (Engine) |
+| **Editor / Tools** | Dear ImGui tooling, asset pipeline UI, etc. | Crucible (Tool) |
+
+**Key principle:** zGameLib stays lean, raw-first, and engine-agnostic. High-level "Server"-style abstractions belong in Nexus. This preserves the framework's transparent nature and prevents scope creep.
 
 ---
 
@@ -265,3 +294,140 @@ zGameLib 1.1.0 (zimgui)       ──► Link-editor 1.1.0 (Crucible)
 See [Nexus ROADMAP](https://github.com/SETA1609/Nexus-engine/blob/main/docs/ROADMAP.md) ·
 [Nexus architecture](https://github.com/SETA1609/Nexus-engine/blob/main/docs/architecture.md) ·
 [Bundle ROADMAP](https://github.com/SETA1609/Link_and_nexus_bundle/blob/main/ROADMAP.md).
+
+---
+
+## Success Metrics
+
+For each milestone:
+- [ ] Implementation complete
+- [ ] Documentation written (theory guide + inline docs)
+- [ ] ≥1 working example
+- [ ] Tests pass (`zig build test-tdd`)
+- [ ] Decoupling checks pass (platform-drags-no-Vulkan, vulkan-drags-no-windowing)
+
+---
+
+## Risks
+
+- **Scope creep**: Temptation to add engine-level features (Servers, scene graph) into the framework. Mitigated by clear architectural boundaries.
+- **Over-engineering**: Building abstractions before they're needed. Mitigated by raw-first philosophy and iterative development.
+- **Parallel development**: Splitting focus between framework and engine. Mitigated by the Framework-Only decision.
+
+---
+
+## See Also
+
+- [`FRAMEWORK_GAP_ANALYSIS_AND_ROADMAP_UPDATE.md`](FRAMEWORK_GAP_ANALYSIS_AND_ROADMAP_UPDATE.md) — detailed gap analysis vs Hazel/Redot, missing features, and sprint recommendations.
+- [`docs/examples/ROADMAP.md`](examples/ROADMAP.md) — examples validation ladder and release sequence.
+- [`docs/theory/README.md`](theory/README.md) — beginner theory guides for the full stack.
+- [`README.md`](../README.md) — project overview and build instructions.
+=======
+# Roadmap — zGameLib Framework
+
+> Framework-level roadmap for zGameLib (Tier 1). For the examples validation ladder, see [`docs/examples/ROADMAP.md`](examples/ROADMAP.md). This document covers the library's own milestones, architectural boundaries, and current-phase focus.
+
+---
+
+## North Star
+
+zGameLib is a **light, transparent game-dev framework in Zig** — a collection of sibling adapter libraries (windowing/input, Vulkan stack, audio, animation, …) with thin, opt-in middleware helpers (`Gpu`, `FrameRing`, a future 2D batcher, …) that re-export everything so you're never boxed in.
+
+The framework **enables** the [Nexus](https://github.com/SETA1609/zigVoxelWorlds) engine but is engine-agnostic. It provides the low-level building blocks and convenience helpers that Nexus (and any other engine) builds on.
+
+---
+
+## July 2026 Update: Framework-Only Development Phase
+
+**Decision:** Focus exclusively on zGameLib (Tier 1 / Framework) for the foreseeable future. Nexus engine work is limited to minimal integration stubs and tests until the framework foundation is solid.
+
+### Rationale
+
+- The 2D pipeline (batcher, assets, audio) is the critical path to validating Nexus with a real 2D game.
+- Completing the framework first avoids the overhead of parallel engine development and ensures a rock-solid foundation.
+- The gap analysis ([`FRAMEWORK_GAP_ANALYSIS_AND_ROADMAP_UPDATE.md`](FRAMEWORK_GAP_ANALYSIS_AND_ROADMAP_UPDATE.md)) estimates the framework is ~60-70% toward enabling a basic 2D game.
+
+### Immediate Sprint Priorities (next 1-2 sprints)
+
+1. Complete `hello-triangle` (robust pipeline, error handling).
+2. **Implement 2D batcher v0** — sprites, quads, atlas integration with zClip.
+3. Start/integrate `zassets` image decode + basic VFS.
+4. Expand example ladder (finish stubs for animation/audio).
+
+### What This Means for Nexus
+
+- No heavy engine work until the framework 2D pipeline is proven.
+- Nexus integration is limited to consuming framework APIs as they stabilise.
+- When the framework is solid, shift primary focus to Nexus and reimplement framework examples as higher-level engine demos.
+
+---
+
+## Architectural Boundaries: Framework vs Engine
+
+This separation is a core design principle, informed by Redot/Godot's layered architecture.
+
+| Layer | Responsibility | Owned by |
+| --- | --- | --- |
+| **Drivers / Adapters** | Low-level platform and graphics stack (SDL3, Vulkan, VMA, etc.). Replaceable backends. | zGameLib |
+| **Middleware Helpers** | Thin, opt-in convenience layers (Gpu, FrameRing, surface bridge, future 2D batcher, …). Re-export the raw layer. | zGameLib |
+| **Servers (opaque high-level managers)** | Opaque subsystems like RenderingServer, AudioServer, PhysicsServer — the "API backend" for scene-level code. | Nexus (Engine) |
+| **Scene / Node System** | Node tree, scene graph, entity composition. | Nexus (Engine) |
+| **Editor / Tools** | Dear ImGui tooling, asset pipeline UI, etc. | Crucible (Tool) |
+
+**Key principle:** zGameLib stays lean, raw-first, and engine-agnostic. High-level "Server"-style abstractions (opaque render managers, resource servers, etc.) belong in Nexus. This preserves the framework's transparent nature and prevents scope creep.
+
+---
+
+## Framework Version Milestones
+
+These milestones describe zGameLib's own evolution (library releases), distinct from the examples ladder versions.
+
+| Release | Focus | Key Deliverables |
+| --- | --- | --- |
+| **v0.1.0** | Foundation | Module re-exports, surface bridge, Swapchain helper, CI decoupling checks. *Current.* |
+| **v0.2.0** | First pipeline | Complete hello-triangle (pipeline + vertex buffer + VMA). Early 2D batcher exploration. |
+| **v0.3.0** | 2D batcher v0 | Efficient sprite/quad batching, atlas integration with zClip, text quad support. |
+| **v0.4.0** | Assets | `zassets`: image decode (PNG), basic VFS, texture creation. |
+| **v0.5.0** | Audio | `zaudio`: miniaudio backend, playback/streaming. Hot-reload middleware. |
+| **v0.6.0** | Animation | Unified `zgame.animation` on top of zClip. Skeletal/glTF prep. Profiling hooks. |
+| **v0.7.0** | Input & polish | Deeper input handling, math utilities (`zmath`), docs polish. |
+| **v1.0.0** | Stable | Every component ships with docs + tests + example. CI matrix green. Ready for Nexus heavy integration. |
+
+---
+
+## Guiding Principles (Recap)
+
+- **Raw-first / opt-in**: Every convenience layer re-exports the raw API. Nothing is hidden.
+- **Sibling independence**: Each adapter library drags in only its own native deps. Decoupling is verified by `nm` checks.
+- **Engine-agnostic**: zGameLib works with any engine, not just Nexus.
+- **Sequential > Parallel**: Framework completeness first; engine integration second.
+- **Pay-for-what-you-use**: Use only the modules you need.
+
+---
+
+## Success Metrics
+
+For each milestone:
+- [ ] Implementation complete
+- [ ] Documentation written (theory guide + inline docs)
+- [ ] ≥1 working example
+- [ ] Tests pass (`zig build test-tdd`)
+- [ ] Decoupling checks pass (platform-drags-no-Vulkan, vulkan-drags-no-windowing)
+
+---
+
+## Risks
+
+- **Scope creep**: Temptation to add engine-level features (Servers, scene graph) into the framework. Mitigated by clear architectural boundaries.
+- **Over-engineering**: Building abstractions before they're needed. Mitigated by raw-first philosophy and iterative development.
+- **Parallel development**: Splitting focus between framework and engine. Mitigated by the Framework-Only decision.
+
+---
+
+## See Also
+
+- [`FRAMEWORK_GAP_ANALYSIS_AND_ROADMAP_UPDATE.md`](FRAMEWORK_GAP_ANALYSIS_AND_ROADMAP_UPDATE.md) — detailed gap analysis vs Hazel/Redot, missing features, and sprint recommendations.
+- [`docs/examples/ROADMAP.md`](examples/ROADMAP.md) — examples validation ladder and release sequence.
+- [`docs/theory/README.md`](theory/README.md) — beginner theory guides for the full stack.
+- [`README.md`](../README.md) — project overview and build instructions.
+>>>>>>> 762f1de (docs: update roadmap and add architecture decisions for framework-only phase)

@@ -7,6 +7,11 @@ each. You pull in exactly what you use; nothing else compiles or ships.
 > **Influenced by Casey Muratori's Handmade Hero philosophy:**
 > thin platform layer, explicit control, replaceable pieces, raw access always
 > available, and no framework magic.
+>
+> **Status:** early scaffold. The build re-exports the libs and the framework's
+> behavioral suite (the cross-lib integration + OpenGL hand-off tests) is green;
+> the high-level layer (`App`, renderer, assets) is being built out. See
+> [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current roadmap.
 
 ## Philosophy — pay for what you use
 
