@@ -61,6 +61,28 @@ jobs:
       - name: CI checks
         run: bash scripts/ci.sh check
 
+  # Unit analysis (refAllDecls) — no display needed, runs on every OS in
+  # parallel with the build matrix.
+  unit-test:
+    name: unit test · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.os == 'macos-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+          use-cache: true
+      - name: Unit analysis
+        run: zig build test
+
   # The platform↔vulkan decoupling invariant: a platform-only binary drags in
   # zero Vulkan. (nm over event-logger.)
   decoupling:

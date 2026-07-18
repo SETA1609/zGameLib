@@ -2,7 +2,7 @@
 # CI gates for zGameLib (framework + examples), runnable locally — the same
 # checks .github/workflows/build.yml runs (it checks out submodules + installs
 # the toolchain / Vulkan ICD, then calls this with the matching command).
-#   ./scripts/ci.sh              # fmt + build all + unit analysis
+#   ./scripts/ci.sh              # fmt + build all (examples + tests skeleton)
 #   ./scripts/ci.sh decoupling   # nm: platform-only binary pulls none of our vulkan stack
 #   ./scripts/ci.sh integration  # cross-lib test-integration (auto-xvfb if headless)
 #   ./scripts/ci.sh opengl       # OpenGL hand-off test (auto-xvfb if headless)
@@ -15,7 +15,6 @@ case "${1:-check}" in
   check)
     echo "== zig fmt --check =="; zig fmt --check build.zig build.zig.zon examples || exit 1
     echo "== zig build (framework + compile-check all examples) =="; zig build event-logger clear-color clear-color-2 || exit 1
-    echo "== zig build test (unit analysis) =="; zig build test || exit 1
     ;;
   decoupling)
     echo "== zig build event-logger (framework + platform-only consumer) =="; zig build event-logger || exit 1
