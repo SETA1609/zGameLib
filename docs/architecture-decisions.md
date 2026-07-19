@@ -120,6 +120,5 @@
 
 ## See Also
 
-- [`FRAMEWORK_GAP_ANALYSIS_AND_ROADMAP_UPDATE.md`](FRAMEWORK_GAP_ANALYSIS_AND_ROADMAP_UPDATE.md) — detailed analysis and context for these decisions.
 - [`docs/ROADMAP.md`](ROADMAP.md) — framework-level roadmap and priorities.
 - [`docs/theory/README.md`](theory/README.md) — beginner-friendly explanation of the architecture.
