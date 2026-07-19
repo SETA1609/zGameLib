@@ -40,12 +40,14 @@ zig build hello-triangle     # rung 2+ — pipeline + VMA vertex buffer; compile
 Docker + CI mirrors (run the exact CI gates locally):
 
 ```sh
+python scripts/ci.py check            # fmt + compile-check event-logger/clear-color/clear-color-2
+python scripts/ci.py decoupling       # nm gate: platform-only binary has zero vulkan-stack symbols
+python scripts/ci.py integration      # test-integration -Dshaderc (auto-wraps xvfb-run if headless)
+python scripts/ci.py opengl           # test-opengl (auto xvfb-run + Mesa llvmpipe if headless)
+
 ./scripts/build-in-docker.sh [step]   # runs `zig build <step>` in the container (default: pipeline)
 ./scripts/shell.sh                    # interactive container shell
-./scripts/ci.sh check                 # fmt + compile-check event-logger/clear-color/clear-color-2
-./scripts/ci.sh decoupling            # nm gate: platform-only binary has zero vulkan-stack symbols
-./scripts/ci.sh integration           # test-integration -Dshaderc (auto-wraps xvfb-run if headless)
-./scripts/ci.sh opengl                # test-opengl (auto xvfb-run + Mesa llvmpipe if headless)
+./scripts/ci.sh check                 # bash equivalent for local Linux debugging
 ```
 
 ## Architecture

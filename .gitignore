@@ -69,6 +69,9 @@ vcpkg_installed/
 Testing/
 .cache/
 
+# Python
+__pycache__/
+
 # Zig
 .zig-cache/
 zig-out/

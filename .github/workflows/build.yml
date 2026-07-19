@@ -2,9 +2,8 @@ name: CI
 
 # zGameLib CI: builds the framework, runs the cross-lib behavioural tests, and
 # builds the examples (which consume the framework but are not part of the
-# library package). Checks live in scripts/ci.sh (single source of truth,
-# runnable locally); the jobs here check out submodules recursively + install
-# the toolchain / Vulkan ICD.
+# library package). Checks use scripts/ci.py (cross-platform Python);
+# bash scripts are kept for local Linux dev and Docker usage.
 on:
   push:
     branches: ['**']
@@ -13,10 +12,6 @@ on:
 # Least privilege: these workflows only check out + build; no writes needed.
 permissions:
   contents: read
-
-defaults:
-  run:
-    shell: bash # so scripts/ci.sh runs on the Windows runner too
 
 jobs:
   # Lint the workflow YAML itself (this repo's + both submodules') for safety:
@@ -59,7 +54,7 @@ jobs:
       # fmt + build both rungs (event-logger + clear-color). No GPU/display
       # needed to build (only to run the windowed example).
       - name: CI checks
-        run: bash scripts/ci.sh check
+        run: python scripts/ci.py check
 
   # Unit analysis (refAllDecls) — no display needed, runs on every OS in
   # parallel with the build matrix.
@@ -97,7 +92,7 @@ jobs:
         with:
           version: 0.16.0
           use-cache: true
-      - run: bash scripts/ci.sh decoupling
+      - run: python scripts/ci.py decoupling
 
   # Headless display / GPU coverage on Linux, via Xvfb + Mesa software drivers.
   #  * OpenGL (test-opengl) on Mesa llvmpipe — software GL is reliable, so it GATES.
@@ -119,11 +114,11 @@ jobs:
       - name: Install Xvfb + Mesa software GL + lavapipe Vulkan ICD
         run: sudo apt-get update && sudo apt-get install -y xvfb mesa-utils libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers
       - name: OpenGL integration (software GL) — gates
-        run: bash scripts/ci.sh opengl
+        run: python scripts/ci.py opengl
       - name: Vulkan integration (lavapipe) — informational
         continue-on-error: true
-        run: bash scripts/ci.sh integration
+        run: python scripts/ci.py integration
 
       - name: Full test suite (test-tdd) — informational
         continue-on-error: true
-        run: bash scripts/ci.sh tdd
+        run: python scripts/ci.py tdd

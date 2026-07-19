@@ -18,16 +18,17 @@
 
 ---
 
-## ADR-002: Script Encapsulation in CI
+## ADR-002: CI Scripts — Python for Pipeline, Bash for Local Linux Dev
 
-**Decision:** All CI logic lives in `scripts/ci.sh`, not inline in workflow YAML.
+**Decision:** CI pipeline logic lives in the Python script `scripts/ci.py`, while bash scripts (`ci.sh`, `build-in-docker.sh`, etc.) are kept for Linux local development and Docker usage.
 
 **Rationale:**
 - Keeps `.github/workflows/` minimal and declarative (triggers, matrix, OS selection only).
-- The actual build/test/check logic is runnable locally with the same script.
-- Single source of truth for CI gates, avoiding YAML-language quirks and duplication across matrix entries.
+- Python runs natively on Linux, macOS, and Windows without needing a bash emulation layer, avoiding CRLF/line-ending issues with `zig fmt` on Windows runners.
+- Bash scripts remain available for interactive local debugging and for use inside the Docker container.
+- `uv` (fast Python package manager) is installed in the Docker image so the Python scripts work inside the container too.
 
-**Affects:** `.github/workflows/build.yml`, `scripts/ci.sh`, local development workflow.
+**Affects:** `.github/workflows/build.yml`, `scripts/ci.py`, `scripts/ci.sh`, `docker/Dockerfile`, local development workflow.
 
 ---
 
