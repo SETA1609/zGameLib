@@ -28,6 +28,10 @@ consumes the foundation to ship a **2D game at v1.0.0** before we invest in 3D d
 - Completing the framework first avoids the overhead of parallel engine development and ensures a rock-solid foundation.
 - The framework is estimated at ~60-70% toward enabling a basic 2D game. The critical gaps are the 2D batcher, asset loading, and audio integration.
 
+### Recent Completions
+
+- **macOS MoltenVK surface path** — `shared/surface.zig` now handles `.macos` via `getCocoaHandle` + `createMetalSurface`. Platform adapter caches the Metal view; vulkan-stack adapter adds `vkCreateMetalSurfaceEXT`. `-Dgfx-backend` build option scaffolded (only `.vulkan` implemented).
+
 ### Immediate Sprint Priorities
 
 1. Complete `hello-triangle` (robust pipeline, error handling).
@@ -285,6 +289,11 @@ See [`docs/examples/ROADMAP.md`](examples/ROADMAP.md). **Re-prioritized for 2D**
 
 macOS is **in scope — not deferred.** CI runs `zig build` on macOS runners; contributors
 validate windowed examples on real hardware before macOS-specific PRs merge.
+
+**macOS MoltenVK surface path (v0.9.0+):** `getCocoaHandle` + `createMetalSurface` implemented.
+Platform adapter uses `SDL_Metal_CreateView`/`SDL_Metal_GetLayer` to obtain the `CAMetalLayer*`;
+vulkan-stack adapter calls `vkCreateMetalSurfaceEXT`. Builds compile-clean on Linux (comptime-gated);
+runtime validation requires a macOS runner with MoltenVK.
 
 ---
 
