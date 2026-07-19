@@ -80,7 +80,7 @@ Each adapter only pulls in what it needs. They meet at narrow, explicit seams.
 Vulkan is the primary (and only core) graphics path. We follow the modern explicit model that gives control and performance.
 
 **Real-life precedent:**  
-Godot 4 performed a complete rewrite of its rendering system around an explicit RenderingDevice abstraction over Vulkan (with optional DX12/Metal). They dropped the old implicit OpenGL path for modern features because the old model could not deliver the required control and multi-threading. We apply the same lesson from day one in Zig.
+Godot 4 performed a complete rewrite of its rendering system around an explicit RenderingDevice abstraction over Vulkan (with optional DX12/Metal). We follow the same explicit-control philosophy from day one in Zig.
 
 ### Minimal Incremental Steps
 Complex systems are broken into small, testable rungs (see the theory docs in `docs/theory/` for the existing Vulkan bring-up path).
@@ -158,8 +158,6 @@ Other engines can also hook into the editor API if they want the same tooling.
 
 **2D Graphics** is provided via lightweight Vulkan batchers/quad renderers built on the above foundation.
 
-**Deprecated:** OpenGL / GLES paths. Vulkan is the explicit, modern choice.
-
 ### Audio — Modern Primary
 - **miniaudio** as the primary sibling adapter (low latency, custom mixing, DSP)
 - SDL3 audio kept as usable fallback (because the platform adapter is already present)
@@ -227,7 +225,7 @@ if (actively_used and good_zig_interop and explicit_model_alignment and no_bette
 
 **Major modernizations already applied:**
 
-- **OpenGL/GLES** → Fully deprecated (Vulkan primary). Real precedent: Godot 4 rewrote rendering around explicit Vulkan because the old implicit model could not support modern clustered rendering and multi-threading.
+- **Implicit GL-style API** → Fully replaced by explicit Vulkan. Real precedent: Godot 4 rewrote rendering around explicit Vulkan because the old implicit model could not support modern clustered rendering and multi-threading.
 - **SCons** → Dropped in favor of full `zig build`.
 - **GDScript** → Dropped (clean-room decision).
 - **Direct low-level audio backends** → Go through miniaudio or SDL3.

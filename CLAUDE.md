@@ -12,7 +12,7 @@ git submodule update --init --recursive   # libs/ are git submodules; needed bef
 zig build                    # default step == `pipeline`: adapter libs → framework, then install
 zig build pipeline           # explicit alias of the default
 zig build test               # analyze + link the `zgame` module (refAllDecls, no display needed)
-zig build test-tdd           # behavioral suite: integration + opengl + gpu (NEEDS display + Vulkan/GL)
+zig build test-tdd           # behavioral suite: integration + gpu (NEEDS display + Vulkan)
 zig build test-tdd -Dshaderc # same, building the vulkan stack with runtime GLSL→SPIR-V (shaderc)
 zig build examples           # build ALL examples (opt-in; not built by default)
 zig build dev                # framework + examples + all tdd tests
@@ -23,7 +23,6 @@ Single suites (the finest test granularity — there is no per-test `--test-filt
 
 ```sh
 zig build test-integration   # cross-lib: window → surface → device → present
-zig build test-opengl        # OpenGL hand-off (system-linked GL)
 zig build test-gpu           # framework's own Gpu + FrameRing + transitionImage spec
 ```
 
@@ -40,12 +39,13 @@ zig build hello-triangle     # rung 2+ — pipeline + VMA vertex buffer; compile
 Docker + CI mirrors (run the exact CI gates locally):
 
 ```sh
+python scripts/ci.py check            # fmt + compile-check event-logger/clear-color/clear-color-2
+python scripts/ci.py decoupling       # nm gate: platform-only binary has zero vulkan-stack symbols
+python scripts/ci.py integration      # test-integration -Dshaderc (auto-wraps xvfb-run if headless)
+
 ./scripts/build-in-docker.sh [step]   # runs `zig build <step>` in the container (default: pipeline)
 ./scripts/shell.sh                    # interactive container shell
-./scripts/ci.sh check                 # fmt + compile-check event-logger/clear-color/clear-color-2
-./scripts/ci.sh decoupling            # nm gate: platform-only binary has zero vulkan-stack symbols
-./scripts/ci.sh integration           # test-integration -Dshaderc (auto-wraps xvfb-run if headless)
-./scripts/ci.sh opengl                # test-opengl (auto xvfb-run + Mesa llvmpipe if headless)
+./scripts/ci.sh check                 # bash equivalent for local Linux debugging
 ```
 
 ## Architecture
@@ -68,7 +68,7 @@ Docker + CI mirrors (run the exact CI gates locally):
 ## Gotchas (verified)
 
 - `examples/` and `shared/*.md`/`docs/` are **not** shipped: `.paths` in `build.zig.zon` lists only `build.zig`, `build.zig.zon`, `src`, `shared`, `tests`, and license files. Examples are consumers, never part of the library package, and are never built by default `zig build`.
-- `zig build test` needs no display; `test-tdd` and its sub-steps need a real display + a Vulkan/GL driver and otherwise **skip** (gated by `error.SkipZigTest` and per-suite `done` flags inside the test files) rather than fail.
+- `zig build test` needs no display; `test-tdd` and its sub-steps need a real display + a Vulkan driver and otherwise **skip** (gated by `error.SkipZigTest` and per-suite `done` flags inside the test files) rather than fail.
 - `shaderc` (runtime GLSL→SPIR-V) is off by default; enable with `-Dshaderc`. Separately, `hello-triangle` compiles its shaders at build time via the `glslc` system command (needs the Vulkan SDK on PATH).
 - The decoupling nm gate deliberately matches only *our* vulkan symbols (`vk.`/`volk`/`vma`/`shaderc_`), not a bare `vk*` grep — SDL3 bundles its own Vulkan loader and is expected in every platform binary.
 - This is a mixed Zig/C/C++ codebase; `cheat_sheet.md` documents the FFI, Zig-0.16 stdlib (Io interface, unmanaged ArrayList, `addExecutable` takes a Module), and build-script traps worth consulting before editing `build.zig` or FFI code.

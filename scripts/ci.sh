@@ -5,7 +5,7 @@
 #   ./scripts/ci.sh              # fmt + build all (examples + tests skeleton)
 #   ./scripts/ci.sh decoupling   # nm: platform-only binary pulls none of our vulkan stack
 #   ./scripts/ci.sh integration  # cross-lib test-integration (auto-xvfb if headless)
-#   ./scripts/ci.sh opengl       # OpenGL hand-off test (auto-xvfb if headless)
+#   ./scripts/ci.sh tdd          # full behavioral suite (test-tdd, auto-xvfb if headless)
 # Examples and tests live directly in this repo (not a submodule).
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -40,19 +40,18 @@ case "${1:-check}" in
       zig build test-integration -Dshaderc || exit 1
     fi
     ;;
-  opengl)
-    # OpenGL hand-off test. Needs a display + a GL driver.
-    # Headless: xvfb-run + Mesa llvmpipe (software GL).
+
+  tdd)
     if [ -z "${DISPLAY:-}" ] && command -v xvfb-run >/dev/null 2>&1; then
-      echo "== xvfb-run zig build test-opengl =="
-      LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a zig build test-opengl || exit 1
+      echo "== xvfb-run zig build test-tdd =="
+      LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a zig build test-tdd || exit 1
     else
-      echo "== zig build test-opengl =="
-      zig build test-opengl || exit 1
+      echo "== zig build test-tdd =="
+      zig build test-tdd || exit 1
     fi
     ;;
   *)
-    echo "unknown command: $1 (try: check | decoupling | integration | opengl)" >&2
+    echo "unknown command: $1 (try: check | decoupling | integration | tdd)" >&2
     exit 2
     ;;
 esac

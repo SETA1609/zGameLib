@@ -87,7 +87,7 @@ and links no graphics library. The README lays out the six paths:
 > — [platform adapter README](../../libs/zig-cpp-platform-stack-adapter/README.md)
 
 The paths are `.none` (window + events only, headless), `.vulkan` (what this
-framework uses), `.opengl`, `.cpu` (a software framebuffer), `.metal`, and
+framework uses), `.cpu` (a software framebuffer), `.metal`, and
 `.directx`. For zGameLib you'll almost always pick `.vulkan`.
 
 ### 3. Events — the per-frame queue

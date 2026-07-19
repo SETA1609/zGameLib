@@ -41,6 +41,7 @@
 
 # Build directories
 build/
+!/build/
 Build/
 build-*/
 
@@ -67,6 +68,9 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# Python
+__pycache__/
 
 # Zig
 .zig-cache/

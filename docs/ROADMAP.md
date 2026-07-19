@@ -18,6 +18,31 @@ consumes the foundation to ship a **2D game at v1.0.0** before we invest in 3D d
 
 ---
 
+## July 2026 Update: Framework-Only Development Phase
+
+**Decision:** Focus exclusively on zGameLib (Tier 1 / Framework) for the foreseeable future. Nexus engine work is limited to minimal integration stubs and tests until the framework foundation is solid.
+
+### Rationale
+
+- The 2D pipeline (batcher, assets, audio) is the critical path to validating Nexus with a real 2D game.
+- Completing the framework first avoids the overhead of parallel engine development and ensures a rock-solid foundation.
+- The framework is estimated at ~60-70% toward enabling a basic 2D game. The critical gaps are the 2D batcher, asset loading, and audio integration.
+
+### Immediate Sprint Priorities
+
+1. Complete `hello-triangle` (robust pipeline, error handling).
+2. **Implement 2D batcher v0** — sprites, quads, atlas integration with zClip.
+3. Start/integrate `zassets` image decode + basic VFS.
+4. Expand example ladder (finish stubs for animation/audio).
+
+### Impact on Nexus
+
+- No heavy engine work until the framework 2D pipeline is proven.
+- Nexus integration limited to consuming framework APIs as they stabilise.
+- When the framework is solid, shift primary focus to Nexus.
+
+---
+
 ## 2D-first strategy
 
 | Principle | zGameLib response |
@@ -33,15 +58,19 @@ consumes the foundation to ship a **2D game at v1.0.0** before we invest in 3D d
 
 ---
 
-## Scope — what zGameLib is (and is not)
+## Architectural Boundaries: Framework vs Engine
 
-| In scope | Out of scope (Tier 2+ Nexus) |
-|----------|------------------------------|
-| Platform, Vulkan, `Gpu`, `FrameRing` | Scene graph, SceneNode, ECS |
-| **2D batcher**, decode, sprite draw 🎯 | Localization, `tr()`, servers |
-| Optional siblings: audio 🎯, assets 🎯, math | Crucible editor, `EditorHost` |
-| Late: ImGui 🔧, fonts 🔧 | WASM mod host, mod API |
-| Post-ship: 3D depth, glTF skeletal ⏳ | Physics, networking APIs |
+This separation is a core design principle, informed by Redot/Godot's layered architecture.
+
+| Layer | Responsibility | Owned by |
+| --- | --- | --- |
+| **Drivers / Adapters** | Low-level platform and graphics stack (SDL3, Vulkan, VMA, etc.). Replaceable backends. | zGameLib |
+| **Middleware Helpers** | Thin, opt-in convenience layers (Gpu, FrameRing, surface bridge, future 2D batcher, …). Re-export the raw layer. | zGameLib |
+| **Servers (opaque high-level managers)** | Opaque subsystems like RenderingServer, AudioServer, PhysicsServer — the "API backend" for scene-level code. | Nexus (Engine) |
+| **Scene / Node System** | Node tree, scene graph, entity composition. | Nexus (Engine) |
+| **Editor / Tools** | Dear ImGui tooling, asset pipeline UI, etc. | Crucible (Tool) |
+
+**Key principle:** zGameLib stays lean, raw-first, and engine-agnostic. High-level "Server"-style abstractions belong in Nexus. This preserves the framework's transparent nature and prevents scope creep.
 
 ---
 
@@ -189,6 +218,23 @@ Also in Phase 3:
 
 ---
 
+## Framework Version Milestones
+
+These milestones describe zGameLib's own evolution (library releases), distinct from the Nexus-aligned version table above.
+
+| Release | Focus | Key Deliverables |
+| --- | --- | --- |
+| **v0.1.0** | Foundation | Module re-exports, surface bridge, Swapchain helper, CI decoupling checks. *Current.* |
+| **v0.2.0** | First pipeline | Complete hello-triangle (pipeline + vertex buffer + VMA). Early 2D batcher exploration. |
+| **v0.3.0** | 2D batcher v0 | Efficient sprite/quad batching, atlas integration with zClip, text quad support. |
+| **v0.4.0** | Assets | `zassets`: image decode (PNG), basic VFS, texture creation. |
+| **v0.5.0** | Audio | `zaudio`: miniaudio backend, playback/streaming. Hot-reload middleware. |
+| **v0.6.0** | Animation | Unified `zgame.animation` on top of zClip. Skeletal/glTF prep. Profiling hooks. |
+| **v0.7.0** | Input & polish | Deeper input handling, math utilities (`zmath`), docs polish. |
+| **v1.0.0** | Stable | Every component ships with docs + tests + example. CI matrix green. Ready for Nexus heavy integration. |
+
+---
+
 ## Example Ladder (Two Tracks)
 
 Examples are **reference apps** — not shipped with the default `zgame` artifact.
@@ -265,3 +311,30 @@ zGameLib 1.1.0 (zimgui)       ──► Link-editor 1.1.0 (Crucible)
 See [Nexus ROADMAP](https://github.com/SETA1609/Nexus-engine/blob/main/docs/ROADMAP.md) ·
 [Nexus architecture](https://github.com/SETA1609/Nexus-engine/blob/main/docs/architecture.md) ·
 [Bundle ROADMAP](https://github.com/SETA1609/Link_and_nexus_bundle/blob/main/ROADMAP.md).
+
+---
+
+## Success Metrics
+
+For each milestone:
+- [ ] Implementation complete
+- [ ] Documentation written (theory guide + inline docs)
+- [ ] ≥1 working example
+- [ ] Tests pass (`zig build test-tdd`)
+- [ ] Decoupling checks pass (platform-drags-no-Vulkan, vulkan-drags-no-windowing)
+
+---
+
+## Risks
+
+- **Scope creep**: Temptation to add engine-level features (Servers, scene graph) into the framework. Mitigated by clear architectural boundaries.
+- **Over-engineering**: Building abstractions before they're needed. Mitigated by raw-first philosophy and iterative development.
+- **Parallel development**: Splitting focus between framework and engine. Mitigated by the Framework-Only decision.
+
+---
+
+## See Also
+
+- [`docs/examples/ROADMAP.md`](examples/ROADMAP.md) — examples validation ladder and release sequence.
+- [`docs/theory/README.md`](theory/README.md) — beginner theory guides for the full stack.
+- [`README.md`](../README.md) — project overview and build instructions.
