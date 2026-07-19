@@ -8,7 +8,7 @@
 //! This file orchestrates the DAG of build steps, each defined in its own file
 //! under build/:
 //!   1. build/modules.zig   — dependencies + shared + framework modules
-//!   2. build/tests.zig     — test targets (unit, integration, opengl, gpu)
+//!   2. build/tests.zig     — test targets (unit, integration, gpu)
 //!   3. build/examples.zig  — example executables
 //!   4. build/dev.zig       — pipeline + dev orchestration steps
 

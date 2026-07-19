@@ -22,7 +22,6 @@ comptime foundation tier, Python CI scripts (cross-platform), bash for local Lin
 python scripts/ci.py              # fmt + compile-check (default: check)
 python scripts/ci.py decoupling   # nm gate (Linux only)
 python scripts/ci.py integration  # test-integration -Dshaderc
-python scripts/ci.py opengl       # test-opengl
 python scripts/ci.py tdd          # full behavioral suite
 ```
 

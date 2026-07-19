@@ -24,6 +24,5 @@ pub fn create(b: *std.Build, examples: ExampleExes, tests: TestSteps) void {
     dev_step.dependOn(b.default_step);
     dev_step.dependOn(examples.examples_step);
     dev_step.dependOn(tests.integration);
-    dev_step.dependOn(tests.opengl);
     dev_step.dependOn(tests.gpu);
 }

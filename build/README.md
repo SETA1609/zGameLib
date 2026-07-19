@@ -18,7 +18,7 @@ modules.zig  ──────┬──────→  tests.zig  ──┐
 | Step file | Responsibility | Output type | Consumed by |
 | --- | --- | --- | --- |
 | [`modules.zig`](modules.zig) | Dependency resolution, shared & framework module creation | `Modules` | tests, examples |
-| [`tests.zig`](tests.zig) | Unit, integration, OpenGL, and GPU test targets | `TestSteps` | dev |
+| [`tests.zig`](tests.zig) | Unit, integration, and GPU test targets | `TestSteps` | dev |
 | [`examples.zig`](examples.zig) | Example executables (compile + run steps) | `ExampleExes` | dev |
 | [`dev.zig`](dev.zig) | Composite `dev` step — builds everything + runs all tests | — | — |
 

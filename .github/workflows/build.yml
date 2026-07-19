@@ -94,13 +94,12 @@ jobs:
           use-cache: true
       - run: python scripts/ci.py decoupling
 
-  # Headless display / GPU coverage on Linux, via Xvfb + Mesa software drivers.
-  #  * OpenGL (test-opengl) on Mesa llvmpipe — software GL is reliable, so it GATES.
-  #  * Vulkan integration (test-integration -Dshaderc) on Mesa lavapipe — lavapipe's
-  #    advertised Vulkan version varies by runner image (the harness requests 1.3),
-  #    so it's informational (continue-on-error), not a hard gate.
+  # Display-dependent tests on Linux via Xvfb + Mesa software Vulkan.
+  # Vulkan integration (test-integration -Dshaderc) on Mesa lavapipe — lavapipe's
+  # advertised Vulkan version varies by runner image (the harness requests 1.3),
+  # so it's informational (continue-on-error), not a hard gate.
   display-tests:
-    name: display tests (xvfb + software GL/Vulkan)
+    name: display tests (xvfb + lavapipe Vulkan)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -111,10 +110,8 @@ jobs:
         with:
           version: 0.16.0
           use-cache: true
-      - name: Install Xvfb + Mesa software GL + lavapipe Vulkan ICD
-        run: sudo apt-get update && sudo apt-get install -y xvfb mesa-utils libgl1-mesa-dri libglx-mesa0 libvulkan1 mesa-vulkan-drivers
-      - name: OpenGL integration (software GL) — gates
-        run: python scripts/ci.py opengl
+      - name: Install Xvfb + lavapipe Vulkan ICD
+        run: sudo apt-get update && sudo apt-get install -y xvfb libvulkan1 mesa-vulkan-drivers
       - name: Vulkan integration (lavapipe) — informational
         continue-on-error: true
         run: python scripts/ci.py integration

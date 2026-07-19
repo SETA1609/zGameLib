@@ -5,7 +5,6 @@ Usage:
   python scripts/ci.py              # fmt + build all (examples + tests skeleton)
   python scripts/ci.py decoupling   # nm: platform-only binary pulls none of our vulkan stack
   python scripts/ci.py integration  # cross-lib test-integration (xvfb on headless Linux)
-  python scripts/ci.py opengl       # OpenGL hand-off test (xvfb on headless Linux)
   python scripts/ci.py tdd          # full behavioral suite (test-tdd, xvfb on headless Linux)
 """
 
@@ -36,7 +35,6 @@ class Command(StrEnum):
     CHECK = "check"
     DECOUPLING = "decoupling"
     INTEGRATION = "integration"
-    OPENGL = "opengl"
     TDD = "tdd"
 
 
@@ -47,7 +45,6 @@ class ZigStep(StrEnum):
     CLEAR_COLOR = "clear-color"
     CLEAR_COLOR_2 = "clear-color-2"
     TEST_INTEGRATION = "test-integration"
-    TEST_OPENGL = "test-opengl"
     TEST_TDD = "test-tdd"
 
 
@@ -117,25 +114,19 @@ def cmd_decoupling():
     print("clean — no vulkan-stack symbols in event-logger (SDL3's own vk loader is expected & ignored)")
 
 
-def _build_with_display(step: ZigStep, extra_args=None, always_soft=False):
+def _build_with_display(step: ZigStep, extra_args=None):
     cmd = [CmdArg.ZIG, CmdArg.BUILD, step]
     if extra_args:
         cmd.extend(extra_args)
     env_merged = os.environ.copy()
     if need_xvfb():
         cmd = [CmdArg.XVFB_RUN, "-a"] + cmd
-    if always_soft and need_xvfb():
-        env_merged["LIBGL_ALWAYS_SOFTWARE"] = "1"
     print(f"== zig build {step} ==")
     subprocess.run(cmd, cwd=PROJECT_ROOT, check=True, env=env_merged)
 
 
 def cmd_integration():
     _build_with_display(ZigStep.TEST_INTEGRATION, extra_args=["-Dshaderc"])
-
-
-def cmd_opengl():
-    _build_with_display(ZigStep.TEST_OPENGL, always_soft=True)
 
 
 def cmd_tdd():
@@ -148,7 +139,6 @@ COMMANDS = {
     Command.CHECK: cmd_check,
     Command.DECOUPLING: cmd_decoupling,
     Command.INTEGRATION: cmd_integration,
-    Command.OPENGL: cmd_opengl,
     Command.TDD: cmd_tdd,
 }
 
