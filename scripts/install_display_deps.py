@@ -24,6 +24,7 @@ from enum import IntEnum, StrEnum
 # ── Exit codes ────────────────────────────────────────────────────────
 
 class Exit(IntEnum):
+    """Process exit codes."""
     OK = 0
     FAIL = 1
 
@@ -31,6 +32,7 @@ class Exit(IntEnum):
 # ── CLI flags ─────────────────────────────────────────────────────────
 
 class Flag(StrEnum):
+    """CLI flag constants."""
     CHECK_ONLY = "--check-only"
     VULKAN_ONLY = "--vulkan-only"
 
@@ -38,6 +40,7 @@ class Flag(StrEnum):
 # ── Platform ─────────────────────────────────────────────────────────
 
 class Platform(StrEnum):
+    """Normalised OS platform identifiers."""
     LINUX = "linux"
     MACOS = "darwin"
     WINDOWS = "win32"
@@ -47,6 +50,7 @@ class Platform(StrEnum):
 # ── Tools ─────────────────────────────────────────────────────────────
 
 class Tool(StrEnum):
+    """External tool names that may appear in PATH."""
     XVFB_RUN = "xvfb-run"
     VULKANINFO = "vulkaninfo"
     LIBVULKAN_SO = "libvulkan.so.1"
@@ -59,6 +63,7 @@ class Tool(StrEnum):
 # ── Apt sub-commands (Linux) ─────────────────────────────────────────
 
 class Apt(StrEnum):
+    """apt-get sub-commands and flags."""
     UPDATE = "update"
     INSTALL = "install"
     FLAG_QUIET = "-qq"
@@ -68,12 +73,14 @@ class Apt(StrEnum):
 # ── Vulkaninfo sub-commands ──────────────────────────────────────────
 
 class VulkanInfo(StrEnum):
+    """vulkaninfo CLI flags."""
     SUMMARY = "--summary"
 
 
 # ── Brew sub-commands (macOS) ────────────────────────────────────────
 
 class Brew(StrEnum):
+    """Homebrew sub-commands and package names."""
     INSTALL = "install"
     MOLTEN_VK = "molten-vk"
 
@@ -81,6 +88,7 @@ class Brew(StrEnum):
 # ── Message templates ────────────────────────────────────────────────
 
 class Msg(StrEnum):
+    """Log and error message strings."""
     XVFB_MISSING = "missing: xvfb-run"
     ICD_MISSING = "missing: Vulkan ICD"
     ICD_MISSING_MACOS = "note: no Vulkan ICD found (display tests may be skipped)"
@@ -130,6 +138,7 @@ LINUX_VULKAN_PACKAGES = [
 # ── Helpers ───────────────────────────────────────────────────────────
 
 def detect_platform() -> str:
+    """Return a Platform constant matching the current OS, or the raw sys.platform if unknown."""
     if sys.platform == Platform.LINUX:
         return Platform.LINUX
     if sys.platform == Platform.MACOS:
@@ -140,18 +149,26 @@ def detect_platform() -> str:
 
 
 def _tool(name: str) -> str | None:
+    """Return the absolute path to `name` if found in PATH, or None."""
     return shutil.which(name)
 
 
 def _run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+    """Thin wrapper around subprocess.run for testability."""
     return subprocess.run(cmd, **kwargs)
 
 
 def check_xvfb() -> bool:
+    """Return True if xvfb-run is available in PATH."""
     return _tool(Tool.XVFB_RUN) is not None
 
 
 def check_vulkan_icd() -> bool:
+    """Return True if at least one Vulkan ICD is loadable.
+
+    Uses vulkaninfo --summary first, then falls back to checking for
+    libvulkan.so.1 at known library paths on Linux.
+    """
     if _tool(Tool.VULKANINFO):
         result = _run([Tool.VULKANINFO, VulkanInfo.SUMMARY], capture_output=True, text=True)
         return result.returncode == Exit.OK
@@ -163,6 +180,7 @@ def check_vulkan_icd() -> bool:
 
 
 def _apt(packages: list[str]) -> bool:
+    """Run apt-get update followed by apt-get install for the given package list. Returns True on success."""
     sudo = [Tool.SUDO] if os.geteuid() != 0 else []
 
     update_cmd = [*sudo, Tool.APT_GET, Apt.UPDATE, Apt.FLAG_QUIET]
@@ -176,10 +194,12 @@ def _apt(packages: list[str]) -> bool:
 
 
 def install_linux(packages: list[str] | None = None) -> bool:
+    """Install display dependencies on Linux via apt-get. Defaults to the full display stack."""
     return _apt(packages or LINUX_DISPLAY_PACKAGES)
 
 
 def install_macos() -> bool:
+    """Ensure a Vulkan ICD is available on macOS. Installs MoltenVK via Homebrew if missing."""
     if _tool(Tool.VULKANINFO):
         print(Msg.VULKAN_SDK_FOUND)
         return True
@@ -196,11 +216,13 @@ def install_macos() -> bool:
 
 
 def install_windows() -> bool:
+    """No-op on Windows — CI runners have a native display server. Returns True."""
     print(Msg.WINDOWS_SKIP)
     return True
 
 
 def check_only() -> int:
+    """Verify display dependencies are present without installing. Returns Exit.OK or Exit.FAIL."""
     plat = detect_platform()
 
     if plat == Platform.LINUX:
@@ -222,6 +244,7 @@ def check_only() -> int:
 
 
 def main():
+    """Parse CLI flags and dispatch to the appropriate platform installer."""
     flags = set(sys.argv[1:])
     check_only_mode = Flag.CHECK_ONLY in flags
     vulkan_only = Flag.VULKAN_ONLY in flags
