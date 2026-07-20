@@ -226,7 +226,171 @@ Beyond the stdlib renames already covered:
 
 ---
 
-## 9. Quick reference table
+## 9. Zig 0.16.0 primitive values and common types
+
+Zig's type system is built from a small set of primitives plus a handful of
+composite forms. Every other type is built from these.
+
+### Primitive types
+
+| Type | Kind | Description |
+|------|------|-------------|
+| `bool` | primitive | `true` or `false` |
+| `u8`, `u16`, `u32`, `u64`, `u128` | primitive | Unsigned integers with explicit bit width |
+| `i8`, `i16`, `i32`, `i64`, `i128` | primitive | Signed integers (two's complement) with explicit bit width |
+| `usize` | primitive | Pointer-sized unsigned integer — use for sizes, indices, and lengths. Platform-dependent: `u64` on 64-bit, `u32` on 32-bit |
+| `isize` | primitive | Pointer-sized signed integer — use for pointer-offset arithmetic. Platform-dependent like `usize` |
+| `f16` | primitive | 16-bit IEEE-754 half-precision floating point |
+| `f32` | primitive | 32-bit IEEE-754 single-precision floating point |
+| `f64` | primitive | 64-bit IEEE-754 double-precision floating point |
+| `f128` | primitive | 128-bit IEEE-754 quad-precision floating point |
+| `comptime_int` | primitive | **Comptime-only.** Arbitrary-precision integer. Coerces to any fixed-width int at runtime. Never exists in a binary. |
+| `comptime_float` | primitive | **Comptime-only.** Arbitrary-precision float. Coerces to `f16`/`f32`/`f64`/`f128` at runtime. Never exists in a binary. |
+| `noreturn` | primitive | Marks functions that never return (e.g. `@panic`, `std.process.exit`). The type of `break`, `continue`, `return`, `unreachable`. |
+| `type` | primitive | The type of types themselves. Used in generic / comptime metaprogramming: `fn T: type) void { … }` |
+| `anyerror` | primitive | The global error set. Every declared or inferred error set coerces to `anyerror`. |
+| `void` | primitive | Zero-bit type. Used where a value must exist but carries no information (e.g. the payload of an error-less error union). |
+
+> **Note:** `comptime_int` and `comptime_float` have no runtime representation.
+> If you need arbitrary-precision at runtime, use `std.math.big.int` or a
+> third-party multi-precision library. If you assign a `comptime_int` to a
+> `u32`, the compiler checks that the value fits — a compilation error results
+> if it doesn't, avoiding silent truncation.
+
+### Non-primitive type forms (composite types)
+
+These are not "primitive" — each is a compound built from other types — but
+they are fundamental to every Zig program.
+
+#### Optionals — `?T`
+
+Either a value of type `T` or `null`. Use `if (x) |val|` to unwrap.
+
+```zig
+const maybe: ?u32 = null;
+if (maybe) |val| {
+    // val is u32 here (non-null arm)
+} else {
+    // null arm
+}
+```
+
+#### Error sets — `error{Name1, Name2}`
+
+An explicit enumeration of possible error names. The global error set is
+`anyerror`. Every declared error set coerces to it.
+
+```zig
+const FileError = error{ NotFound, PermissionDenied };
+```
+
+#### Error unions — `!T`
+
+A value that is either a `T` or an error. `void` is common as the success
+payload: `!void` means "this function may error but returns nothing on
+success."
+
+```zig
+fn readFile(path: []const u8) ![]u8 { ... }  // returns []u8 or error
+```
+
+#### Arrays — `[N]T`
+
+A contiguous sequence of `N` values, all of type `T`. The length is part of the
+type and known at compile time.
+
+```zig
+const arr: [4]u8 = .{ 1, 2, 3, 4 };        // length 4, known at comptime
+const inferred = [_]u8{ 1, 2, 3 };          // comptime-inferred length = 3
+```
+
+#### Slices — `[]T` / `[]const T`
+
+A pointer + a runtime length. "Fat pointer" — the length is not part of the
+type. `[]const T` is a read-only view.
+
+```zig
+fn sum(xs: []const f32) f32 {               // length is runtime
+    var s: f32 = 0;
+    for (xs) |x| s += x;
+    return s;
+}
+```
+
+#### Pointers — `*T`, `*const T`, `[*]T`, `[*c]T`
+
+| Form | What it points to | Nullable? |
+|------|-------------------|-----------|
+| `*T` | A single `T` | No |
+| `*const T` | A single `T` (read-only) | No |
+| `[*]T` | Many `T`s (unknown length) | No |
+| `[*c]T` | C-compatible pointer (may be `null`) | Yes |
+| `*[N]T` | An array of exactly `N` `T` values | No |
+| `*align(L) T` | Single `T` with minimum alignment `L` | No |
+
+#### Vectors — `@Vector(N, T)`
+
+SIMD vectors: operations are element-wise. The length `N` must be comptime-known
+and is typically a power of 2 (1, 2, 4, 8, 16, 32, 64) — the compiler maps to
+hardware SIMD registers when possible.
+
+```zig
+const a: @Vector(4, f32) = .{ 1, 2, 3, 4 };
+const b: @Vector(4, f32) = .{ 5, 6, 7, 8 };
+const c = a + b;  // element-wise → { 6, 8, 10, 12 }
+```
+
+#### Tagged unions — `union(enum) { … }`
+
+A value that can be one of several variants, each optionally carrying a payload.
+The tag is inferred from the variant names.
+
+```zig
+const Event = union(enum) {
+    key_press: u32,
+    mouse_click: struct { x: f32, y: f32 },
+    resize: struct { w: u32, h: u32 },
+    quit: void,  // no payload
+};
+```
+
+#### Structs — `struct { … }`
+
+An aggregate of named fields. Fields have default values, may be
+comptime-only, and may be backed by a backing integer (`packed`).
+
+```zig
+const Vec3 = struct { x: f32, y: f32, z: f32 };
+```
+
+#### Enums — `enum { … }`
+
+A named set of values. Each variant may carry an explicit integer tag value.
+
+```zig
+const Color = enum(u3) { red = 0, green = 1, blue = 2 };
+```
+
+#### Opaque — `opaque { … }`
+
+A type with no known size or layout — used for FFI handles where only the
+pointer identity matters.
+
+```zig
+const SDL_Window = opaque {};
+```
+
+#### Function types — `fn(parameters) ReturnType`
+
+The type of a function. A function pointer is `*const fn(...) ReturnType`.
+
+```zig
+const Handler = *const fn (event: Event) void;  // function pointer type
+```
+
+---
+
+## 10. Quick reference table
 
 | Symptom | Likely cause |
 |---|---|
