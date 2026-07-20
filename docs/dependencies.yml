@@ -196,9 +196,10 @@ policy:
   no_gpl_lgpl_agpl: true
   raw_access_always: true
   submodule_init: git submodule update --init --recursive
-  macos:
-    in_scope: true
-    deferred: false
-    behavior_source: Redot clean-room study (Cocoa/Metal/MoltenVK hand-off)
-    maintainer_ci: build/compile in container VM pipelines (macos-latest)
-    contributor_testing: runtime and display validation on real macOS hardware required for macOS-specific PRs
+    macos:
+      in_scope: true
+      deferred: false
+      surface_path: implemented (getCocoaHandle + createMetalSurface — VK_EXT_metal_surface)
+      behavior_source: Redot clean-room study (Cocoa/Metal/MoltenVK hand-off)
+      maintainer_ci: build/compile in container VM pipelines (macos-latest)
+      contributor_testing: runtime and display validation on real macOS hardware required for macOS-specific PRs

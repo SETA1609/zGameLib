@@ -110,8 +110,8 @@ jobs:
         with:
           version: 0.16.0
           use-cache: true
-      - name: Install Xvfb + lavapipe Vulkan ICD
-        run: sudo apt-get update && sudo apt-get install -y xvfb libvulkan1 mesa-vulkan-drivers
+      - name: Install display deps (xvfb + Mesa software Vulkan)
+        run: python scripts/install_display_deps.py
       - name: Vulkan integration (lavapipe) — informational
         continue-on-error: true
         run: python scripts/ci.py integration

@@ -25,7 +25,9 @@ pub fn build(b: *std.Build) void {
 
     const enable_shaderc = b.option(bool, "shaderc", "Build the vulkan stack with runtime shaderc (GLSL→SPIR-V)") orelse false;
 
-    const mods = modules.create(b, target, optimize, enable_shaderc);
+    const gfx_backend = b.option([]const u8, "gfx-backend", "Graphics backend: vulkan (default), metal, directx12") orelse "vulkan";
+
+    const mods = modules.create(b, target, optimize, enable_shaderc, gfx_backend);
 
     const test_steps = tests.create(b, target, optimize, mods);
 
