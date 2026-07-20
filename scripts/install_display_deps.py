@@ -7,6 +7,7 @@ CI case), and validates availability on macOS/Windows without sudo gating.
 Usage:
   python scripts/install_display_deps.py              # install + verify
   python scripts/install_display_deps.py --check-only  # verify only, no install
+  python scripts/install_display_deps.py --vulkan-only # just Vulkan loader + ICD
 
 Exit codes:
   0 — deps available (or platform has native display, no install needed)
@@ -79,8 +80,10 @@ def check_vulkan_icd() -> bool:
     return False
 
 
-def install_linux() -> bool:
+def install_linux(packages: list[str] | None = None) -> bool:
     """Install display dependencies on Linux via apt."""
+    if packages is None:
+        packages = LINUX_PACKAGES
     if os.geteuid() != 0:
         print("info: not root, attempting install with sudo")
         sudo = ["sudo"]
@@ -92,7 +95,7 @@ def install_linux() -> bool:
     if subprocess.run(update_cmd).returncode != 0:
         print("warning: apt-get update failed, continuing")
 
-    install_cmd = sudo + ["apt-get", "install", "-y", "-qq"] + LINUX_PACKAGES
+    install_cmd = sudo + ["apt-get", "install", "-y", "-qq"] + packages
     print(f"== {' '.join(install_cmd)} ==")
     return subprocess.run(install_cmd).returncode == 0
 
@@ -152,6 +155,7 @@ def check_only() -> int:
 
 def main():
     check_only_mode = "--check-only" in sys.argv
+    vulkan_only = "--vulkan-only" in sys.argv
 
     plat = detect_platform()
 
@@ -159,13 +163,21 @@ def main():
         print(f"platform: {plat}")
         sys.exit(check_only())
 
+    print(f"platform: {plat}")
+
     if plat == Platform.LINUX:
-        if not install_linux():
+        pkgs = (
+            ["libvulkan1", "mesa-vulkan-drivers", "vulkan-tools"]
+            if vulkan_only
+            else LINUX_PACKAGES
+        )
+        if not install_linux(pkgs):
             print("error: failed to install display dependencies", file=sys.stderr)
             sys.exit(1)
-        if not check_xvfb():
-            print("error: xvfb-run still not found after install", file=sys.stderr)
-            sys.exit(1)
+        if not vulkan_only:
+            if not check_xvfb():
+                print("error: xvfb-run still not found after install", file=sys.stderr)
+                sys.exit(1)
         print("ok: display dependencies installed")
 
     elif plat == Platform.MACOS:
