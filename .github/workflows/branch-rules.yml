@@ -19,7 +19,7 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
           HEAD_REF: ${{ github.head_ref }}
-        run: bash scripts/ci/check-branch-source.sh "$BASE_REF" "$HEAD_REF"
+        run: python scripts/ci/check_branch_source.py "$BASE_REF" "$HEAD_REF"
 
   check-dev-ci:
     name: Check dev CI status
@@ -31,4 +31,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-        run: bash scripts/ci/check-dev-ci.sh "$REPO"
+        run: python scripts/ci/check_dev_ci.py "$REPO"
