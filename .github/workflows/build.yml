@@ -114,8 +114,8 @@ jobs:
         run: python scripts/ci/install_display_deps.py
       - name: Vulkan integration (lavapipe) — informational
         continue-on-error: true
-        run: python scripts/ci/ci.py integration
+        run: xvfb-run -a python scripts/ci/integration.py
 
       - name: Full test suite (test-tdd) — informational
         continue-on-error: true
-        run: python scripts/ci/ci.py tdd
+        run: xvfb-run -a zig build test-tdd --summary all
