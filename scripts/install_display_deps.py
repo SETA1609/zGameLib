@@ -110,10 +110,12 @@ class Msg(StrEnum):
 
 # ── Vulkan ICD library paths ─────────────────────────────────────────
 
-LIBVULKAN_PATHS = [
-    "/usr/lib/x86_64-linux-gnu/libvulkan.so.1",
-    "/usr/lib/aarch64-linux-gnu/libvulkan.so.1",
-]
+class LibVulkan(StrEnum):
+    X86_64 = "/usr/lib/x86_64-linux-gnu/libvulkan.so.1"
+    AARCH64 = "/usr/lib/aarch64-linux-gnu/libvulkan.so.1"
+
+
+LIBVULKAN_PATHS = [LibVulkan.X86_64, LibVulkan.AARCH64]
 
 # ── Packages ──────────────────────────────────────────────────────────
 

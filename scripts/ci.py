@@ -23,6 +23,10 @@ SCRIPTS = Path(PROJECT_ROOT) / "scripts"
 EXIT_FAILURE = 1
 EXIT_USAGE = 2
 
+# ── decoupling check regex ──────────────────────────────────────────────────
+
+VULKAN_LEAK_RE = re.compile(r"vk\.[A-Za-z]|volk[A-Z]|[Vv]ma[A-Z]|shaderc_[a-z]")
+
 # ── platform enum ───────────────────────────────────────────────────────────
 
 class Platform(StrEnum):
@@ -61,6 +65,23 @@ class CmdArg(StrEnum):
     XVFB_RUN = "xvfb-run"
 
 
+# ── path constants ──────────────────────────────────────────────────────────
+
+class ZigDir(StrEnum):
+    FMT_TARGETS = "build.zig"
+    FMT_TARGETS_ZON = "build.zig.zon"
+    FMT_TARGETS_EXAMPLES = "examples"
+    ZIG_OUT = "zig-out"
+    BIN = "bin"
+    CACHE = ".zig-cache"
+
+
+# ── build flags ─────────────────────────────────────────────────────────────
+
+class BuildFlag(StrEnum):
+    SHADERC = "-Dshaderc"
+
+
 # ── helpers ─────────────────────────────────────────────────────────────────
 
 def run(cmd, **kwargs):
@@ -95,7 +116,7 @@ def need_xvfb():
 def cmd_check():
     print("== zig fmt --check ==")
     subprocess.run(
-        [CmdArg.ZIG, CmdArg.FMT, CmdArg.FMT_CHECK, "build.zig", "build.zig.zon", "examples"],
+        [CmdArg.ZIG, CmdArg.FMT, CmdArg.FMT_CHECK, ZigDir.FMT_TARGETS, ZigDir.FMT_TARGETS_ZON, ZigDir.FMT_TARGETS_EXAMPLES],
         cwd=PROJECT_ROOT,
         check=True,
     )
@@ -112,7 +133,7 @@ def cmd_decoupling():
         print(f"nm decoupling check skipped on {sys.platform}")
         return
 
-    bin_path = os.path.join(PROJECT_ROOT, "zig-out", "bin", ZigStep.EVENT_LOGGER)
+    bin_path = os.path.join(PROJECT_ROOT, ZigDir.ZIG_OUT, ZigDir.BIN, ZigStep.EVENT_LOGGER)
     if not os.path.isfile(bin_path):
         print(f"::error::event-logger binary not found at {bin_path}")
         sys.exit(EXIT_FAILURE)
@@ -121,9 +142,7 @@ def cmd_decoupling():
     result = subprocess.run(
         [CmdArg.NM, bin_path], capture_output=True, text=True, cwd=PROJECT_ROOT
     )
-    leaked = re.findall(
-        r"vk\.[A-Za-z]|volk[A-Z]|[Vv]ma[A-Z]|shaderc_[a-z]", result.stdout
-    )
+    leaked = VULKAN_LEAK_RE.findall(result.stdout)
     if leaked:
         print("::error::our vulkan stack (vulkan-zig/volk/VMA) leaked into the platform-only binary")
         for sym in sorted(set(leaked)):
@@ -145,7 +164,7 @@ def _build_with_display(step: ZigStep, extra_args=None):
 
 def cmd_integration():
     ensure_display_deps()
-    _build_with_display(ZigStep.TEST_INTEGRATION, extra_args=["-Dshaderc"])
+    _build_with_display(ZigStep.TEST_INTEGRATION, extra_args=[BuildFlag.SHADERC])
 
 
 def cmd_tdd():
@@ -174,7 +193,7 @@ def main():
         print(f"unknown command: {command} (try: {' | '.join(COMMANDS)})", file=sys.stderr)
         sys.exit(EXIT_USAGE)
 
-    os.makedirs(os.path.join(PROJECT_ROOT, ".zig-cache"), exist_ok=True)
+    os.makedirs(os.path.join(PROJECT_ROOT, ZigDir.CACHE), exist_ok=True)
 
     COMMANDS[command]()
     print(f"ok: {command}")
