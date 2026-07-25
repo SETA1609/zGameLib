@@ -78,7 +78,7 @@ the CPU.
 - Resizing works: the swapchain and the depth buffer are recreated.
 - `zig build run-depth-cube -- --frames 60` exits 0 under Xvfb + lavapipe with the
   Khronos validation layer loaded and no validation messages.
-- `python scripts/ci.py sync-validation` passes: 30 frames with synchronization
+- `python scripts/ci/ci.py sync-validation` passes: 30 frames with synchronization
   validation and no hazards. The barriers it checks are explained in
   [file 14, section 1](../theory/14-depth-buffers-meshes-and-dynamic-rendering.md#one-depth-image-two-frames-in-flight-what-the-barrier-must-wait-for).
 

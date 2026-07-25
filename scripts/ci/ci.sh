@@ -2,13 +2,13 @@
 # CI gates for zGameLib (framework + examples), runnable locally — the same
 # checks .github/workflows/build.yml runs (it checks out submodules + installs
 # the toolchain / Vulkan ICD, then calls this with the matching command).
-#   ./scripts/ci.sh              # fmt + build all (examples + tests skeleton)
-#   ./scripts/ci.sh decoupling   # nm: platform-only binary pulls none of our vulkan stack
-#   ./scripts/ci.sh integration  # cross-lib test-integration (auto-xvfb if headless)
-#   ./scripts/ci.sh tdd          # full behavioral suite (test-tdd, auto-xvfb if headless)
+#   ./scripts/ci/ci.sh              # fmt + build all (examples + tests skeleton)
+#   ./scripts/ci/ci.sh decoupling   # nm: platform-only binary pulls none of our vulkan stack
+#   ./scripts/ci/ci.sh integration  # cross-lib test-integration (auto-xvfb if headless)
+#   ./scripts/ci/ci.sh tdd          # full behavioral suite (test-tdd, auto-xvfb if headless)
 # Examples and tests live directly in this repo (not a submodule).
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 
 case "${1:-check}" in
   check)

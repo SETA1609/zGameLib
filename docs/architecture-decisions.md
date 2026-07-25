@@ -20,7 +20,7 @@
 
 ## ADR-002: CI Scripts — Python for Pipeline, Bash for Local Linux Dev
 
-**Decision:** CI pipeline logic lives in the Python script `scripts/ci.py`, while bash scripts (`ci.sh`, `build-in-docker.sh`, etc.) are kept for Linux local development and Docker usage.
+**Decision:** CI pipeline logic lives in the Python script `scripts/ci/ci.py`, while bash scripts (`ci.sh`, `build-in-docker.sh`, etc.) are kept for Linux local development and Docker usage.
 
 **Rationale:**
 - Keeps `.github/workflows/` minimal and declarative (triggers, matrix, OS selection only).
@@ -28,7 +28,7 @@
 - Bash scripts remain available for interactive local debugging and for use inside the Docker container.
 - `uv` (fast Python package manager) is installed in the Docker image so the Python scripts work inside the container too.
 
-**Affects:** `.github/workflows/build.yml`, `scripts/ci.py`, `scripts/ci.sh`, `docker/Dockerfile`, local development workflow.
+**Affects:** `.github/workflows/build.yml`, `scripts/ci/ci.py`, `scripts/ci/ci.sh`, `docker/Dockerfile`, local development workflow.
 
 ---
 
@@ -99,7 +99,7 @@
 - Deferral aligns with the "pay for what you use" philosophy: no one pays CI time or maintenance attention for a path no consumer uses.
 - If and when funding (sponsorship, contract work, or a paying Nexus customer) requires OpenGL support, the path can be restored from the commit history — both the framework's `tests/opengl_test.zig` (removed at commit `ad1293f`) and the adapter's `13_gl_context_test.zig` TDD suite remain in the git log.
 
-**Affects:** `tests/opengl_test.zig` (removed), `build/tests.zig`, `build/dev.zig`, `scripts/ci.py`, `.github/workflows/build.yml`, documentation.
+**Affects:** `tests/opengl_test.zig` (removed), `build/tests.zig`, `build/dev.zig`, `scripts/ci/ci.py`, `.github/workflows/build.yml`, documentation.
 
 ---
 

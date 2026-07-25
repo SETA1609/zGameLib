@@ -18,7 +18,7 @@ Items (completed):
 - [x] **S1.1** Enable the local-path deps. `build.zig.zon`: uncomment the `.platform` + `.vulkan_stack` path entries.
 - [x] **S1.2** Wire the build shell. `build.zig`: pull both `b.dependency(...)`, create the `surface` module, add the example-exe helper.
 - [x] **S1.3** Rung 0 — event-logger (platform only). **No `vulkan_stack` import** — this enforces pay-for-what-you-use from the start.
-- [x] **S1.4** Decoupling check #1 (`scripts/ci.sh decoupling`): assert event-logger drags **none of our Vulkan stack**.
+- [x] **S1.4** Decoupling check #1 (`scripts/ci/ci.sh decoupling`): assert event-logger drags **none of our Vulkan stack**.
 - [x] **S1.5** The surface bridge (`shared/surface.zig`).
 - [x] **S1.6** Rung 1 — clear-color (platform + vulkan together).
 - [ ] **S1.7** Decoupling check #2 (headless-vulkan: no windowing symbols).
