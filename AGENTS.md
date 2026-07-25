@@ -19,10 +19,10 @@ comptime foundation tier, Python CI scripts (cross-platform), bash for local Lin
 ## CI scripts (pipeline)
 
 ```sh
-python scripts/ci.py              # fmt + compile-check (default: check)
-python scripts/ci.py decoupling   # nm gate (Linux only)
-python scripts/ci.py integration  # test-integration -Dshaderc
-python scripts/ci.py tdd          # full behavioral suite
+python scripts/ci/ci.py              # fmt + compile-check (default: check)
+python scripts/ci/ci.py decoupling   # nm gate (Linux only)
+python scripts/ci/ci.py integration  # test-integration -Dshaderc
+python scripts/ci/ci.py tdd          # full behavioral suite
 ```
 
 ## Docker development (bash scripts — local Linux dev only)
@@ -40,4 +40,17 @@ python scripts/ci.py tdd          # full behavioral suite
 
 Reusable workflow: `.github/workflows/reusable/build.yml`.
 Main CI: `.github/workflows/build.yml` — builds framework + display tests.
-Auto-rebase: `.github/workflows/rebase-branches.yml` — on push to main, rebases all branches onto it (skips conflicts, logs failures).
+Auto-rebase: `.github/workflows/rebase-branches.yml` — on push to `dev`, rebases `feature/*` branches onto it (skips conflicts, logs failures).
+
+## Branching model
+
+```
+main ──── dev ◄── feature/* (PRs into dev)
+         ▲
+         └── only dev → main PRs allowed
+```
+
+- **`main`** — stable, release-ready. Only accepts PRs from `dev`.
+- **`dev`** — integration branch. All feature branches fork from `dev` and PR into `dev`.
+- **`feature/*`** — topic branches rooted at `dev`.
+- **PR gate**: `.github/workflows/branch-rules.yml` validates source/target (rejects non-`dev`→`main` and `main`→`dev` PRs) and checks that `dev` CI is green before merging to `main`.

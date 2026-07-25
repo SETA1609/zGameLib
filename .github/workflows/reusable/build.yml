@@ -38,7 +38,7 @@ jobs:
 
       - name: Install display deps (xvfb + Mesa software Vulkan)
         if: inputs.with-display
-        run: python scripts/install_display_deps.py
+        run: python scripts/ci/install_display_deps.py
 
       - name: Build
         run: zig build ${{ inputs.target }}
