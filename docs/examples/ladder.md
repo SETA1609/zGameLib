@@ -53,7 +53,7 @@ Two checks prove it — these are required gates, not nice-to-haves:
 > leak. The invariant we actually protect is "importing the platform adapter
 > doesn't drag in **our** Vulkan stack," so the check matches what's unique to
 > it: vulkan-zig's `vk.`-namespaced Zig wrappers plus the volk / VMA / shaderc
-> symbols. Source of truth: `scripts/ci.sh decoupling`.
+> symbols. Source of truth: `scripts/ci/ci.sh decoupling`.
 
 ## Extended validation track (adapter depth)
 
