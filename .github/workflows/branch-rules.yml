@@ -16,27 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate branch hierarchy
-        run: |
-          TARGET="${{ github.base_ref }}"
-          SOURCE="${{ github.head_ref }}"
-          errors=0
-
-          if [ "$TARGET" = "main" ] && [ "$SOURCE" != "dev" ]; then
-            echo "::error::PRs targeting 'main' must come from 'dev', not '$SOURCE'"
-            errors=$((errors + 1))
-          fi
-
-          if [ "$TARGET" = "dev" ] && [ "$SOURCE" = "main" ]; then
-            echo "::error::PRs targeting 'dev' must not come from 'main'"
-            errors=$((errors + 1))
-          fi
-
-          if [ "$errors" -gt 0 ]; then
-            echo "See docs/architecture-decisions.md for the branching model."
-            exit 1
-          fi
-
-          echo "✅ $SOURCE → $TARGET is valid"
+        run: bash scripts/check-branch-source.sh "${{ github.base_ref }}" "${{ github.head_ref }}"
 
   check-dev-ci:
     name: Check dev CI status
@@ -47,21 +27,4 @@ jobs:
       - name: Fetch latest dev CI conclusion
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          # Get the latest workflow run on the dev branch for the CI workflow
-          RUN_JSON=$(gh api repos/${{ github.repository }}/actions/workflows/build.yml/runs \
-            --jq '.workflow_runs[] | select(.head_branch == "dev" and .status == "completed") | .conclusion' \
-            --paginate 2>/dev/null | head -1)
-
-          if [ -z "$RUN_JSON" ]; then
-            echo "::warning::No completed CI run found on 'dev' branch — cannot verify status"
-            exit 0
-          fi
-
-          if [ "$RUN_JSON" != "success" ]; then
-            echo "::error::Latest CI run on 'dev' concluded with '$RUN_JSON' — must be 'success' before merging to main"
-            echo "::error::Visit https://github.com/${{ github.repository }}/actions?query=branch:dev to check"
-            exit 1
-          fi
-
-          echo "✅ Latest CI run on 'dev' passed"
+        run: bash scripts/check-dev-ci.sh "${{ github.repository }}"
