@@ -105,7 +105,8 @@ git submodule update --init --recursive
 zig build                 # build the re-export module + lib artifacts
 zig build test            # analyze + link the framework module
 zig build test-tdd        # behavioral suite — needs a display + Vulkan/GL
-zig build test-tdd -Dshaderc   # also build with runtime shaderc
+zig build test-tdd -Dshaderc        # also build with runtime shaderc
+zig build -Dgfx-backend=metal       # scaffold for non-Vulkan backends (compileError until implemented)
 ```
 
 ### Example ladder (incremental, pay-as-you-go)

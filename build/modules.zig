@@ -28,10 +28,20 @@ pub fn create(
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
     enable_shaderc: bool,
+    gfx_backend: []const u8,
 ) Modules {
     const platform_dep = b.dependency("platform", .{ .target = target, .optimize = optimize });
     const vulkan_dep = b.dependency("vulkan_stack", .{ .target = target, .optimize = optimize, .shaderc = enable_shaderc });
     const zclip_dep = b.dependency("zclip", .{ .target = target, .optimize = optimize });
+
+    const zgame_opts = b.addOptions();
+    zgame_opts.addOption([]const u8, "gfx_backend", gfx_backend);
+
+    const backend_mod = b.createModule(.{
+        .root_source_file = b.path("shared/backend.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
 
     const surface = b.createModule(.{
         .root_source_file = b.path("shared/surface.zig"),
@@ -40,6 +50,8 @@ pub fn create(
     });
     surface.addImport("platform", platform_dep.module("platform"));
     surface.addImport("vulkan_stack", vulkan_dep.module("vulkan_stack"));
+    surface.addImport("backend", backend_mod);
+    surface.addOptions("zgame_options", zgame_opts);
 
     const swapchain = b.createModule(.{
         .root_source_file = b.path("shared/swapchain.zig"),
@@ -86,6 +98,7 @@ pub fn create(
     zgame.addImport("frame", frame);
     zgame.addImport("zclip", zclip_dep.module("zclip"));
     zgame.addImport("animation", animation);
+    zgame.addImport("backend", backend_mod);
     zgame.linkLibrary(platform_dep.artifact("platform"));
     zgame.linkLibrary(vulkan_dep.artifact("vulkan_stack"));
     zgame.linkLibrary(zclip_dep.artifact("zclip"));

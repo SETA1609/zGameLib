@@ -34,6 +34,9 @@ pub const shaderc = vulkan_stack.shaderc;
 /// The comptime platform↔vulkan **surface bridge** — the one place the two libs
 /// meet, passing raw OS primitives. `createSurface(instance, window)`.
 pub const surface = @import("surface");
+
+/// Graphics backend enum (scaffold: only `.vulkan` is implemented).
+pub const GfxBackend = @import("backend").GfxBackend;
 /// A reusable **swapchain** (renderer policy: format/present-mode/recreation).
 pub const swapchain = @import("swapchain");
 

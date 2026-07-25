@@ -14,8 +14,10 @@ import shutil
 import subprocess
 import sys
 from enum import StrEnum
+from pathlib import Path
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SCRIPTS = Path(PROJECT_ROOT) / "scripts"
 
 # ── exit codes ──────────────────────────────────────────────────────────────
 EXIT_FAILURE = 1
@@ -64,6 +66,22 @@ class CmdArg(StrEnum):
 def run(cmd, **kwargs):
     print(f"== {' '.join(cmd)} ==")
     subprocess.run(cmd, cwd=PROJECT_ROOT, check=True, **kwargs)
+
+
+def ensure_display_deps():
+    """Install display dependencies if missing (Linux headless CI).
+
+    Delegates to `scripts/install_display_deps.py` which handles
+    cross-platform detection and package-manager invocation.
+    """
+    if sys.platform != Platform.LINUX:
+        return
+    if os.environ.get("DISPLAY"):
+        return  # native display server already available
+    if shutil.which("xvfb-run") and shutil.which("vulkaninfo"):
+        return  # already installed
+    install_script = SCRIPTS / "install_display_deps.py"
+    subprocess.run([sys.executable, str(install_script)], check=True)
 
 
 def need_xvfb():
@@ -126,10 +144,12 @@ def _build_with_display(step: ZigStep, extra_args=None):
 
 
 def cmd_integration():
+    ensure_display_deps()
     _build_with_display(ZigStep.TEST_INTEGRATION, extra_args=["-Dshaderc"])
 
 
 def cmd_tdd():
+    ensure_display_deps()
     _build_with_display(ZigStep.TEST_TDD)
 
 

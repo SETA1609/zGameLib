@@ -5,7 +5,9 @@
 //! and passing **raw OS primitives** — no shared type crosses the boundary.
 //! This is the single place the two libs meet. Design: ../docs/clear-color.md.
 
+const std = @import("std");
 const builtin = @import("builtin");
+const backend = @import("backend");
 const platform = @import("platform");
 const vulkan_stack = @import("vulkan_stack");
 const vk = vulkan_stack.vk;
@@ -16,6 +18,12 @@ pub const Error = error{NoSupportedSurface} || vulkan_stack.SurfaceError;
 /// session may be X11 *or* Wayland, so we try each at runtime; other targets
 /// have exactly one path, chosen at comptime.
 pub fn createSurface(instance: vk.Instance, window: *platform.Window) Error!vk.SurfaceKHR {
+    comptime {
+        const active = @import("zgame_options").gfx_backend;
+        if (!std.mem.eql(u8, active, "vulkan")) {
+            @compileError("surface bridge: only vulkan backend is implemented; selected backend: " ++ active);
+        }
+    }
     // Android is `os.tag == .linux` with `abi == .android`, so check abi first.
     if (comptime builtin.target.abi == .android) {
         const h = platform.getAndroidHandle(window) orelse return error.NoSupportedSurface;
@@ -33,6 +41,11 @@ pub fn createSurface(instance: vk.Instance, window: *platform.Window) Error!vk.S
             const h = platform.getWin32Handle(window) orelse return error.NoSupportedSurface;
             return vulkan_stack.createWin32Surface(instance, h.hinstance, h.hwnd);
         },
+        .macos => {
+            const h = platform.getCocoaHandle(window) orelse return error.NoSupportedSurface;
+            return vulkan_stack.createMetalSurface(instance, h.layer);
+        },
+        .ios, .tvos => @compileError("surface bridge: iOS/tvOS not yet implemented (needs UIKit handle getter + VK_EXT_metal_surface)"),
         else => @compileError("surface bridge: unsupported target OS"),
     }
 }
