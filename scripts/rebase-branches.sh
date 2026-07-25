@@ -1,22 +1,16 @@
 #!/usr/bin/env bash
-# Rebase all living branches onto the target branch (default: main).
-# Runs on push to main or dev — keeps feature branches up to date.
+# Rebase all feature/* branches onto the target branch (default: dev).
+# Runs on push to dev — keeps feature branches up to date.
 # Branches with conflicts are SKIPPED (rebase aborted, not force-pushed).
 set -euo pipefail
 
-TARGET="${1:-main}"
+TARGET="${1:-dev}"
 
 git fetch origin --prune
 
 CURRENT=$(git rev-parse --abbrev-ref HEAD)
 
-# When rebasing onto dev, skip main (main is the root, not a child).
-EXCLUDE="origin/$TARGET\$"
-if [ "$TARGET" = "dev" ]; then
-    EXCLUDE="$EXCLUDE|origin/main\$"
-fi
-
-for branch in $(git branch -r | grep -vE "$EXCLUDE" | grep -v 'origin/HEAD' | sed 's|origin/||'); do
+for branch in $(git branch -r | grep -E 'origin/feature/' | sed 's|origin/||'); do
     echo "==> Rebase: $branch onto $TARGET ..."
 
     git checkout -q "$branch" 2>/dev/null || git checkout -q -b "$branch" "origin/$branch"

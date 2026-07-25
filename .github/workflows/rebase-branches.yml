@@ -2,14 +2,14 @@ name: Rebase branches
 
 on:
   push:
-    branches: [main, master, dev]
+    branches: [dev]
 
 permissions:
   contents: write
 
 jobs:
   rebase:
-    name: Rebase all branches onto ${{ github.ref_name }}
+    name: Rebase feature/* onto ${{ github.ref_name }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

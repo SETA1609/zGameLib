@@ -40,7 +40,7 @@ python scripts/ci.py tdd          # full behavioral suite
 
 Reusable workflow: `.github/workflows/reusable/build.yml`.
 Main CI: `.github/workflows/build.yml` — builds framework + display tests.
-Auto-rebase: `.github/workflows/rebase-branches.yml` — on push to `main` or `dev`, rebases child branches (skips conflicts, logs failures).
+Auto-rebase: `.github/workflows/rebase-branches.yml` — on push to `dev`, rebases `feature/*` branches onto it (skips conflicts, logs failures).
 
 ## Branching model
 
