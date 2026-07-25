@@ -8,7 +8,7 @@
 #   ./scripts/ci/ci.sh tdd          # full behavioral suite (test-tdd, auto-xvfb if headless)
 # Examples and tests live directly in this repo (not a submodule).
 set -uo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 
 case "${1:-check}" in
   check)

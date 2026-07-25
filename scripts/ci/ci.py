@@ -16,7 +16,7 @@ import sys
 from enum import StrEnum
 from pathlib import Path
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SCRIPTS = Path(PROJECT_ROOT) / "scripts" / "ci"
 
 # ── exit codes ──────────────────────────────────────────────────────────────
