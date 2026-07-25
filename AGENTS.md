@@ -19,10 +19,10 @@ comptime foundation tier, Python CI scripts (cross-platform), bash for local Lin
 ## CI scripts (pipeline)
 
 ```sh
-python scripts/ci.py              # fmt + compile-check (default: check)
-python scripts/ci.py decoupling   # nm gate (Linux only)
-python scripts/ci.py integration  # test-integration -Dshaderc
-python scripts/ci.py tdd          # full behavioral suite
+python scripts/ci/ci.py              # fmt + compile-check (default: check)
+python scripts/ci/ci.py decoupling   # nm gate (Linux only)
+python scripts/ci/ci.py integration  # test-integration -Dshaderc
+python scripts/ci/ci.py tdd          # full behavioral suite
 ```
 
 ## Docker development (bash scripts — local Linux dev only)

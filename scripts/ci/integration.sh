@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run the cross-lib integration tests. Optional arg = --test-filter substring.
-#   ./scripts/integration.sh           # all (counts only)
-#   ./scripts/integration.sh "surface" # just matching tests (full output, panics shown)
+#   ./scripts/ci/integration.sh           # all (counts only)
+#   ./scripts/ci/integration.sh "surface" # just matching tests (full output, panics shown)
 # Needs a display server + a Vulkan loader.
 set -uo pipefail
 cd "$(dirname "$0")/.."

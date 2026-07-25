@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate branch hierarchy
-        run: bash scripts/check-branch-source.sh "${{ github.base_ref }}" "${{ github.head_ref }}"
+        run: bash scripts/ci/check-branch-source.sh "${{ github.base_ref }}" "${{ github.head_ref }}"
 
   check-dev-ci:
     name: Check dev CI status
@@ -27,4 +27,4 @@ jobs:
       - name: Fetch latest dev CI conclusion
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash scripts/check-dev-ci.sh "${{ github.repository }}"
+        run: bash scripts/ci/check-dev-ci.sh "${{ github.repository }}"

@@ -16,7 +16,7 @@ zig build test-tdd           # behavioral suite: integration + gpu (NEEDS displa
 zig build test-tdd -Dshaderc # same, building the vulkan stack with runtime GLSL→SPIR-V (shaderc)
 zig build examples           # build ALL examples (opt-in; not built by default)
 zig build dev                # framework + examples + all tdd tests
-zig fmt --check build.zig build.zig.zon examples   # the lint gate (see scripts/ci.sh)
+zig fmt --check build.zig build.zig.zon examples   # the lint gate (see scripts/ci/ci.sh)
 ```
 
 Single suites (the finest test granularity — there is no per-test `--test-filter` wired):
@@ -39,13 +39,13 @@ zig build hello-triangle     # rung 2+ — pipeline + VMA vertex buffer; compile
 Docker + CI mirrors (run the exact CI gates locally):
 
 ```sh
-python scripts/ci.py check            # fmt + compile-check event-logger/clear-color/clear-color-2
-python scripts/ci.py decoupling       # nm gate: platform-only binary has zero vulkan-stack symbols
-python scripts/ci.py integration      # test-integration -Dshaderc (auto-wraps xvfb-run if headless)
+python scripts/ci/ci.py check            # fmt + compile-check event-logger/clear-color/clear-color-2
+python scripts/ci/ci.py decoupling       # nm gate: platform-only binary has zero vulkan-stack symbols
+python scripts/ci/ci.py integration      # test-integration -Dshaderc (auto-wraps xvfb-run if headless)
 
 ./scripts/build-in-docker.sh [step]   # runs `zig build <step>` in the container (default: pipeline)
 ./scripts/shell.sh                    # interactive container shell
-./scripts/ci.sh check                 # bash equivalent for local Linux debugging
+./scripts/ci/ci.sh check                 # bash equivalent for local Linux debugging
 ```
 
 ## Architecture
@@ -54,7 +54,7 @@ python scripts/ci.py integration      # test-integration -Dshaderc (auto-wraps x
 
 **Two consumer modules** (both `b.addModule`, so consumers import at source level):
 - `zgame` (`src/root.zig`) — the full framework. Re-exports the raw building blocks (`zgame.platform`, `.vk`, `.volk`, `.vma`, `.shaderc`, `.surface`, `.swapchain`, `.zclip`) AND links all three lib artifacts, plus framework helpers `zgame.Gpu`, `zgame.FrameRing`, `zgame.transitionImage`, `zgame.animation`, `zgame.App`. **This is what Nexus imports as `zgame`.**
-- `zgame_platform` (`src/root_platform.zig`) — platform-only slice. Re-exports `platform` and links **only** the platform artifact — no vulkan. This is a hard decoupling: `zgame_platform` has no `.vk`/`.vma` fields at all, so vulkan absence is enforced by the type system (and separately checked by `scripts/ci.sh decoupling` via `nm`).
+- `zgame_platform` (`src/root_platform.zig`) — platform-only slice. Re-exports `platform` and links **only** the platform artifact — no vulkan. This is a hard decoupling: `zgame_platform` has no `.vk`/`.vma` fields at all, so vulkan absence is enforced by the type system (and separately checked by `scripts/ci/ci.sh decoupling` via `nm`).
 
 **Framework glue** lives in `shared/` and is wired as intermediate modules in `build.zig`, layered *over* the raw libs (never replacing them — every helper exposes its underlying handles as public fields, "raw access always"):
 - `surface.zig` — the comptime platform↔vulkan surface bridge; the single place the two adapter libs meet. Branches on target OS at comptime (X11/Wayland tried at runtime on Linux, Android abi checked first), passing raw OS primitives with no shared type crossing the boundary.

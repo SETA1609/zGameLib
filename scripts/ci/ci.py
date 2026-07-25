@@ -2,10 +2,10 @@
 """CI pipeline for zGameLib — cross-platform equivalent of ci.sh.
 
 Usage:
-  python scripts/ci.py              # fmt + build all (examples + tests skeleton)
-  python scripts/ci.py decoupling   # nm: platform-only binary pulls none of our vulkan stack
-  python scripts/ci.py integration  # cross-lib test-integration (xvfb on headless Linux)
-  python scripts/ci.py tdd          # full behavioral suite (test-tdd, xvfb on headless Linux)
+  python scripts/ci/ci.py              # fmt + build all (examples + tests skeleton)
+  python scripts/ci/ci.py decoupling   # nm: platform-only binary pulls none of our vulkan stack
+  python scripts/ci/ci.py integration  # cross-lib test-integration (xvfb on headless Linux)
+  python scripts/ci/ci.py tdd          # full behavioral suite (test-tdd, xvfb on headless Linux)
 """
 
 import os
@@ -17,7 +17,7 @@ from enum import StrEnum
 from pathlib import Path
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SCRIPTS = Path(PROJECT_ROOT) / "scripts"
+SCRIPTS = Path(PROJECT_ROOT) / "scripts" / "ci"
 
 # ── exit codes ──────────────────────────────────────────────────────────────
 EXIT_FAILURE = 1
@@ -71,7 +71,7 @@ def run(cmd, **kwargs):
 def ensure_display_deps():
     """Install display dependencies if missing (Linux headless CI).
 
-    Delegates to `scripts/install_display_deps.py` which handles
+    Delegates to `scripts/ci/install_display_deps.py` which handles
     cross-platform detection and package-manager invocation.
     """
     if sys.platform != Platform.LINUX:
