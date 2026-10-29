@@ -1,10 +1,18 @@
 # Changelog
 
-Last updated: 2026-10-29T00:29Z
+Last updated: 2026-10-29T09:40Z
 
 Changes per issue, newest first. Issues are tracked in [issues.md](issues.md). Each PR adds its entry and updates the timestamp above. History before this file: `git log`.
 
 ## Unreleased
+
+### Issue 3 Run agents in a dev container
+
+Branch `issue-3-run-agents-in-a-dev-container`.
+
+- `docker/agent.Dockerfile`: the build image plus Claude Code 2.1.312, Node 22.23.4 (SHA-256 pinned), uv 0.10.12 (digest pinned), and an `agent` user with the host's uid and gid. No GitHub credentials.
+- `scripts/agent.sh [command...]` (default `bash`): mounts the checkout at its host path, its git directory when `.git` is a file (submodule or worktree), and the named home volume `personal-agent-home` (`AGENT_HOME_VOLUME` overrides it) that keeps the Claude login and git identity.
+- Checked from a submodule checkout: `claude --version` prints 2.1.312; `git status` and `git submodule status` work; `zig build test` passes; files written inside belong to the host user.
 
 ### Issue 1 Port to Zig 0.17.0
 

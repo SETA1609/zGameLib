@@ -36,6 +36,15 @@ python scripts/ci.py tdd          # full behavioral suite
 # ci.sh also available for local Linux debugging (same commands as ci.py)
 ```
 
+## Agent container
+
+```sh
+./scripts/agent.sh          # bash in the agent image (build image + Claude Code, Node 22, uv)
+./scripts/agent.sh claude   # Claude Code directly
+```
+
+The home is the named volume `personal-agent-home` (override with `AGENT_HOME_VOLUME`), which keeps the agent's Claude login and git identity apart from the host's. One-time setup inside: run `claude` and `/login`, then `git config --global user.name` / `user.email`. The host's `~/.claude`, `~/.gitconfig`, and SSH keys are not mounted, so the container commits but cannot push; push from the host.
+
 ## CI
 
 Reusable workflow: `.github/workflows/reusable/build.yml`.

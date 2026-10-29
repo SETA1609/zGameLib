@@ -22,3 +22,13 @@ Needs: Issue 1
 Add a 3D render path beside the 2D one without changing the 2D API: a depth attachment, a perspective camera, and one indexed mesh drawn with dynamic rendering. Engine-neutral: no game content.
 
 Done when: an example draws a depth-tested mesh; the 2D examples render unchanged.
+
+---
+
+## Issue 3 — Run agents in a dev container
+
+Status: review
+
+Run coding agents (Claude Code) on zGameLib with their own login, kept apart from the host's Claude Code account. Add `docker/agent.Dockerfile` on top of the build image (Claude Code, Node 22, uv, a user with the host's uid and gid) and `scripts/agent.sh`, which mounts a named home volume (`personal-agent-home`, shared with other repos that use the same volume name) for the Claude login and git identity. The host's `~/.claude`, `~/.gitconfig`, and SSH keys are not mounted: the agent commits, and the owner pushes from the host. When the checkout is a submodule or worktree, its git directory is mounted too.
+
+Done when: `./scripts/agent.sh claude --version` prints the pinned version; `git status` and `zig build test` work inside the container from a standalone clone and from a submodule checkout; files it writes belong to the host user.
