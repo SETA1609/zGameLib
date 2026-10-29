@@ -25,6 +25,16 @@ Done when: an example draws a depth-tested mesh; the 2D examples render unchange
 
 ---
 
+## Issue 4 — Design the API before the tests
+
+Status: review
+
+Write down the commit order every behaviour change follows: the API with stub bodies, then failing tests against it, then the implementation, which makes the tests pass without changing them or the public signatures. Each step is its own commit, and the tests commit records the failing run. Issue 2 is the first issue done this way.
+
+Done when: `CLAUDE.md` has the workflow section.
+
+---
+
 ## Issue 3 — Run agents in a dev container
 
 Status: review

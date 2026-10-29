@@ -1,10 +1,16 @@
 # Changelog
 
-Last updated: 2026-10-29T09:40Z
+Last updated: 2026-10-29T15:00Z
 
 Changes per issue, newest first. Issues are tracked in [issues.md](issues.md). Each PR adds its entry and updates the timestamp above. History before this file: `git log`.
 
 ## Unreleased
+
+### Issue 4 Design the API before the tests
+
+Branch `issue-4-design-the-api-before-the-tests`.
+
+- `CLAUDE.md` gets a Workflow section: each behaviour change is three commits in order, the API with stub bodies, failing tests against it (the failing run recorded), and the implementation, which leaves the tests and public signatures unchanged.
 
 ### Issue 3 Run agents in a dev container
 
