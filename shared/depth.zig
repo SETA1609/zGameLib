@@ -1,5 +1,6 @@
-//! A depth buffer for the 3D path: one D32 depth image, its memory, and a view,
-//! sized to the swapchain extent.
+//! A depth buffer for the 3D path: one depth image, its memory, and a view,
+//! sized to the swapchain extent. The format is D32 when the device supports
+//! it as a depth attachment, else X8_D24 (`findSupportedDepthFormat`).
 //!
 //! Used with dynamic rendering (`Gpu.Options.enable_dynamic_rendering`): each
 //! frame, `recordTransitionToAttachment` moves the image into the depth
@@ -10,7 +11,26 @@
 const vulkan_stack = @import("vulkan_stack");
 const vk = vulkan_stack.vk;
 
+/// Depth formats `DepthBuffer` can use, most preferred first. The Vulkan spec
+/// requires depth-attachment support for at least one of the two.
+pub const depth_format_candidates = [_]vk.Format{ .d32_sfloat, .x8_d24_unorm_pack32 };
+
+/// The first of `candidates` that is also in `supported_depth_formats`, or null.
+/// Pure, so the fallback order is testable without a GPU.
+pub fn chooseFirstSupportedDepthFormat(candidates: []const vk.Format, supported_depth_formats: []const vk.Format) ?vk.Format {
+    _ = .{ candidates, supported_depth_formats };
+    @panic("not implemented");
+}
+
+/// The first of `depth_format_candidates` the device supports as an optimal-tiling
+/// depth attachment. `gpu` is a `*Gpu` (or anything with `.vki` and `.pdev`).
+pub fn findSupportedDepthFormat(gpu: anytype) error{NoSupportedDepthFormat}!vk.Format {
+    _ = gpu;
+    @panic("not implemented");
+}
+
 pub const DepthBuffer = struct {
+    /// The preferred format; `create` falls back to the next candidate when the device lacks it.
     pub const depth_format: vk.Format = .d32_sfloat;
 
     vkd: vk.DeviceWrapper,
@@ -21,7 +41,8 @@ pub const DepthBuffer = struct {
     format: vk.Format = depth_format,
     extent: vk.Extent2D,
 
-    /// `gpu` is a `*Gpu` (or anything with `.vkd`, `.device`, and `findMemoryTypeIndex`).
+    /// Uses `findSupportedDepthFormat`. `gpu` is a `*Gpu` (or anything with `.vkd`,
+    /// `.device`, `.vki`, `.pdev`, and `findMemoryTypeIndex`).
     pub fn create(gpu: anytype, extent: vk.Extent2D) !DepthBuffer {
         var depth_buffer = DepthBuffer{ .vkd = gpu.vkd, .device = gpu.device, .extent = extent };
         try depth_buffer.createImageMemoryAndView(gpu);

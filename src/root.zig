@@ -73,6 +73,10 @@ pub const Vector3 = camera.Vector3;
 pub const PerspectiveCamera = camera.PerspectiveCamera;
 /// A D32 depth image + view sized to the swapchain. See depth.zig.
 pub const DepthBuffer = @import("depth").DepthBuffer;
+/// The depth format choice behind `DepthBuffer.create`. See depth.zig.
+pub const depth_format_candidates = @import("depth").depth_format_candidates;
+pub const chooseFirstSupportedDepthFormat = @import("depth").chooseFirstSupportedDepthFormat;
+pub const findSupportedDepthFormat = @import("depth").findSupportedDepthFormat;
 /// One vertex buffer + one 16-bit index buffer, drawn with `recordDraw`. See mesh.zig.
 pub const IndexedMesh = @import("mesh").IndexedMesh;
 
