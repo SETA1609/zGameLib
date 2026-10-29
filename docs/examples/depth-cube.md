@@ -28,7 +28,7 @@ frame (0.01 radians), not per second, so every run draws the same frames.
 |-------|-----------|
 | `zgame.Gpu` with `.enable_dynamic_rendering = true` | Vulkan 1.3 device with dynamic rendering switched on |
 | `zgame.FrameRing(2)` | two frames in flight: command buffers, sync, acquire/submit/present |
-| `zgame.DepthBuffer` | D32 depth image + view, recreated when the swapchain changes size |
+| `zgame.DepthBuffer` | depth image + view (D32, or X8_D24 when D32 is unsupported), recreated when the swapchain changes size |
 | `zgame.IndexedMesh` | 8 vertices + 36 16-bit indices in host-visible buffers |
 | `zgame.PerspectiveCamera`, `zgame.Matrix4` | the model-view-projection matrix |
 | SPIR-V shaders | `cube.vert.spv` + `cube.frag.spv`, compiled from GLSL by `glslc` at build time |
@@ -78,14 +78,9 @@ the CPU.
 - Resizing works: the swapchain and the depth buffer are recreated.
 - `zig build run-depth-cube -- --frames 60` exits 0 under Xvfb + lavapipe with the
   Khronos validation layer loaded and no validation messages.
-
-## Known limitation
-
-The depth buffer is one image shared by both frames in flight, and its per-frame
-barrier does not wait for the previous frame's depth writes. See
-[file 14, "Known limitation"](../theory/14-depth-buffers-meshes-and-dynamic-rendering.md#known-limitation-one-depth-image-shared-by-frames-in-flight).
-Standard validation does not report it; the synchronization validation layer
-would.
+- `python scripts/ci.py sync-validation` passes: 30 frames with synchronization
+  validation and no hazards. The barriers it checks are explained in
+  [file 14, section 1](../theory/14-depth-buffers-meshes-and-dynamic-rendering.md#one-depth-image-two-frames-in-flight-what-the-barrier-must-wait-for).
 
 ## Build
 

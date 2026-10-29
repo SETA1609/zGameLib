@@ -102,17 +102,20 @@ pub const DepthBuffer = struct {
 };
 ```
 
-- **Format `D32_SFLOAT`**: one 32-bit float per pixel, no stencil. Float depth
-  keeps more precision far from the camera than 16- or 24-bit fixed point (file
-  12, section 6 explains why that matters). It is **not guaranteed** everywhere.
-  The spec's required format support says the depth/stencil attachment feature
-  "must be supported for at least one of `VK_FORMAT_X8_D24_UNORM_PACK32` and
+- **Format: `D32_SFLOAT` when the device supports it, else `X8_D24_UNORM_PACK32`.**
+  `D32_SFLOAT` is one 32-bit float per pixel, no stencil. Float depth keeps more
+  precision far from the camera than 24-bit fixed point (file 13, section 6
+  explains why that matters). It is **not guaranteed** everywhere. The spec's
+  required format support says the depth/stencil attachment feature "must be
+  supported for at least one of `VK_FORMAT_X8_D24_UNORM_PACK32` and
   `VK_FORMAT_D32_SFLOAT`"
   ([*Required Format Support*](https://registry.khronos.org/vulkan/specs/latest/html/vkspec.html#features-required-format-support)).
-  Desktop drivers and lavapipe support `D32_SFLOAT`; `DepthBuffer` has no
-  fallback yet, so on a device without it image creation fails. Querying
-  `vkGetPhysicalDeviceFormatProperties` and falling back to `X8_D24` is on the
-  list in section 4.
+  So `DepthBuffer.create` calls `findSupportedDepthFormat`, which asks
+  `vkGetPhysicalDeviceFormatProperties` about each of `depth_format_candidates`
+  in order and takes the first with optimal-tiling depth-attachment support.
+  The choice itself is the pure `chooseFirstSupportedDepthFormat`, so the
+  fallback is tested without a GPU (`tests/depth_format_test.zig`). Pipelines
+  must use `depth_buffer.format`, not the preferred `DepthBuffer.depth_format`.
 - **Image + memory + view**: the three objects every Vulkan image needs: the
   image (its shape and usage, here `depth_stencil_attachment`), the memory that
   backs it (device-local, fastest for the GPU, from `findMemoryTypeIndex`), and
@@ -134,10 +137,13 @@ It transitions from `UNDEFINED`, which tells the driver the old contents may be
 discarded. That is correct because the depth is cleared at the start of every
 frame anyway, and it saves the GPU from preserving data nobody reads.
 
-### Known limitation: one depth image shared by frames in flight
+### One depth image, two frames in flight: what the barrier must wait for
 
-The barrier's source stage is `TOP_OF_PIPE` with no source access. The spec says
-what that means as a source:
+`depth-cube` runs 2 frames in flight with one depth image. Frame N+1's
+transition, and then its clear, must not start while frame N's depth tests are
+still writing the same image. A barrier only waits for what is in its *source*
+scope, so the source stage matters. An earlier version used `TOP_OF_PIPE` with
+no source access, and the spec says what that means as a source:
 
 > "`VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT` is equivalent to
 > `VK_PIPELINE_STAGE_ALL_COMMANDS_BIT` with `VkAccessFlags` set to `0` when
@@ -145,13 +151,26 @@ what that means as a source:
 > execution when specified in the first scope."
 > — [Vulkan spec, *Pipeline Stages*](https://registry.khronos.org/vulkan/specs/latest/html/vkspec.html#synchronization-pipeline-stages)
 
-So the barrier does not wait for the *previous* frame's depth writes.
-`depth-cube` runs 2 frames in flight with one depth image, so frame N+1's clear
-may race frame N's depth tests on the GPU: a write-after-write hazard. Standard
-validation does not report it, and lavapipe happens to run frames in order; the
-synchronization validation layer would flag it. The fix is a source stage of
-`EARLY_FRAGMENT_TESTS | LATE_FRAGMENT_TESTS` with source access
-`DEPTH_STENCIL_ATTACHMENT_WRITE`, or one depth image per frame in flight.
+So that barrier did not wait for the previous frame's depth writes: a
+write-after-write hazard. Standard validation does not report it; the Khronos
+validation layer's *synchronization validation* reported it once per frame
+(29 times in 30 frames). `recordTransitionToAttachment` now uses
+`EARLY_FRAGMENT_TESTS | LATE_FRAGMENT_TESTS` as the source stages, the stages
+where depth is written, with `DEPTH_STENCIL_ATTACHMENT_WRITE` as the source
+access. One depth image per frame in flight would also work, at the cost of
+memory.
+
+The swapchain image needs the same care. It comes back from the presentation
+engine through the image-acquire semaphore, which `FrameRing.end` waits on at
+`COLOR_ATTACHMENT_OUTPUT`. A layout transition with source stage `TOP_OF_PIPE`
+is not ordered after that wait and can run while the image is still being
+read: a write-after-read hazard (30 in 30 frames). `depth-cube` passes
+`COLOR_ATTACHMENT_OUTPUT` as the transition's source stage, the same stage as
+the wait, so the transition is chained after it.
+
+`python scripts/ci.py sync-validation` runs `depth-cube` with synchronization
+validation and fails on any validation error, so these hazards cannot come
+back unnoticed.
 
 ---
 
@@ -290,7 +309,7 @@ the formats, and `render_pass` is null:
 const rendering_create_info = vk.PipelineRenderingCreateInfo{
     .color_attachment_count = color_attachment_formats.len,
     .p_color_attachment_formats = &color_attachment_formats, // the swapchain format
-    .depth_attachment_format = depth_format,                  // DepthBuffer.depth_format
+    .depth_attachment_format = depth_format,                  // depth_buffer.format
     ...
 };
 ```
@@ -338,9 +357,6 @@ the colour and the depth work start at those stages.
 
 None of these are built yet; each would be its own issue.
 
-- Fix the depth barrier's source scope (section 1).
-- Pick the depth format from what the device supports, with an `X8_D24`
-  fallback (section 1).
 - Back-face culling, with `front_face` chosen for the flipped Y (file 13,
   section 4).
 - Staging uploads into device-local memory for large meshes.

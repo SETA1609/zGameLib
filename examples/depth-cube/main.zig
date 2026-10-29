@@ -137,7 +137,9 @@ fn recordCubeFrame(
 ) void {
     const vkd = gpu.vkd;
     const command_buffer = frame.cmd;
-    zgame.transitionImage(vkd, command_buffer, frame.image, .undefined, .color_attachment_optimal, .{}, .{ .color_attachment_write = true }, .{ .top_of_pipe = true }, .{ .color_attachment_output = true });
+    // Source stage = the stage FrameRing.end waits on the image-acquire semaphore, so the
+    // transition runs after the presentation engine is done reading the image.
+    zgame.transitionImage(vkd, command_buffer, frame.image, .undefined, .color_attachment_optimal, .{}, .{ .color_attachment_write = true }, .{ .color_attachment_output = true }, .{ .color_attachment_output = true });
     depth_buffer.recordTransitionToAttachment(command_buffer);
 
     const color_attachment = vk.RenderingAttachmentInfo{

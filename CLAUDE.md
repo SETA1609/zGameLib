@@ -43,6 +43,7 @@ Docker + CI mirrors (run the exact CI gates locally):
 python scripts/ci.py check            # fmt + compile-check event-logger/clear-color/clear-color-2
 python scripts/ci.py decoupling       # nm gate: platform-only binary has zero vulkan-stack symbols
 python scripts/ci.py integration      # test-integration -Dshaderc (auto-wraps xvfb-run if headless)
+python scripts/ci.py sync-validation  # depth-cube under Khronos synchronization validation; fails on any validation error
 
 ./scripts/build-in-docker.sh [step]   # runs `zig build <step>` in the container (default: pipeline)
 ./scripts/shell.sh                    # interactive container shell

@@ -21,7 +21,31 @@ Needs: Issue 1
 
 Add a 3D render path beside the 2D one without changing the 2D API: a depth attachment, a perspective camera, and one indexed mesh drawn with dynamic rendering. Engine-neutral: no game content.
 
-Done when: an example draws a depth-tested mesh; the 2D examples render unchanged.
+Done when: an example draws a depth-tested mesh; the 2D examples render unchanged; `depth-cube` runs with no synchronization-validation errors (`scripts/ci.py sync-validation`).
+
+---
+
+## Issue 5 — Order swapchain image transitions after image acquire
+
+Status: todo
+Needs: Issue 2
+
+The examples transition the acquired swapchain image out of `UNDEFINED` with source stage `TOP_OF_PIPE`, but `FrameRing.end` waits on the image-acquire semaphore at a later stage (`TRANSFER` in `clear-color-2`). The transition is then not ordered after the wait and can run while the presentation engine still reads the image. Synchronization validation reports `SYNC-HAZARD-WRITE-AFTER-READ` on every frame: 27,368 times in 25 seconds of `clear-color-2`. Issue 2 fixed the same pattern in `depth-cube`.
+
+Use the semaphore's wait stage as each transition's source stage, in every example and test that records one, and say in `transitionImage`'s doc comment that the source stage must chain with the acquire wait. Extend `scripts/ci.py sync-validation` to every example that renders, with a frame limit like `depth-cube`'s `--frames N`, so the check covers them all.
+
+Done when: `scripts/ci.py sync-validation` runs `clear-color`, `clear-color-2`, and `depth-cube` with no validation errors.
+
+---
+
+## Issue 6 — Fix hello-triangle's validation errors
+
+Status: todo
+Needs: —
+
+With the Khronos validation layer loaded, `hello-triangle` reports `VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-04130` and `-04131` at pipeline creation and `VUID-VkRenderPassBeginInfo-framebuffer-parameter` when it begins its render pass, then aborts. Without the layer it runs. Find and fix each cause (the viewport and scissor state of a pipeline with dynamic viewport and scissor; which framebuffer is passed after the swapchain is created or recreated), and add a frame limit so the example can run in `scripts/ci.py sync-validation`.
+
+Done when: `hello-triangle` runs under the validation layer, with synchronization validation, with no validation errors, and is part of the `sync-validation` check.
 
 ---
 

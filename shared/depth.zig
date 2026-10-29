@@ -18,15 +18,28 @@ pub const depth_format_candidates = [_]vk.Format{ .d32_sfloat, .x8_d24_unorm_pac
 /// The first of `candidates` that is also in `supported_depth_formats`, or null.
 /// Pure, so the fallback order is testable without a GPU.
 pub fn chooseFirstSupportedDepthFormat(candidates: []const vk.Format, supported_depth_formats: []const vk.Format) ?vk.Format {
-    _ = .{ candidates, supported_depth_formats };
-    @panic("not implemented");
+    for (candidates) |candidate| {
+        for (supported_depth_formats) |supported_depth_format| {
+            if (candidate == supported_depth_format) return candidate;
+        }
+    }
+    return null;
 }
 
 /// The first of `depth_format_candidates` the device supports as an optimal-tiling
 /// depth attachment. `gpu` is a `*Gpu` (or anything with `.vki` and `.pdev`).
 pub fn findSupportedDepthFormat(gpu: anytype) error{NoSupportedDepthFormat}!vk.Format {
-    _ = gpu;
-    @panic("not implemented");
+    var supported_depth_formats: [depth_format_candidates.len]vk.Format = undefined;
+    var supported_count: usize = 0;
+    for (depth_format_candidates) |candidate| {
+        const format_properties = gpu.vki.getPhysicalDeviceFormatProperties(gpu.pdev, candidate);
+        if (format_properties.optimal_tiling_features.depth_stencil_attachment) {
+            supported_depth_formats[supported_count] = candidate;
+            supported_count += 1;
+        }
+    }
+    return chooseFirstSupportedDepthFormat(&depth_format_candidates, supported_depth_formats[0..supported_count]) orelse
+        error.NoSupportedDepthFormat;
 }
 
 pub const DepthBuffer = struct {
@@ -44,7 +57,12 @@ pub const DepthBuffer = struct {
     /// Uses `findSupportedDepthFormat`. `gpu` is a `*Gpu` (or anything with `.vkd`,
     /// `.device`, `.vki`, `.pdev`, and `findMemoryTypeIndex`).
     pub fn create(gpu: anytype, extent: vk.Extent2D) !DepthBuffer {
-        var depth_buffer = DepthBuffer{ .vkd = gpu.vkd, .device = gpu.device, .extent = extent };
+        var depth_buffer = DepthBuffer{
+            .vkd = gpu.vkd,
+            .device = gpu.device,
+            .format = try findSupportedDepthFormat(gpu),
+            .extent = extent,
+        };
         try depth_buffer.createImageMemoryAndView(gpu);
         return depth_buffer;
     }
@@ -67,9 +85,11 @@ pub const DepthBuffer = struct {
 
     /// Move the image to `depth_attachment_optimal` before rendering. The previous
     /// contents are discarded, which is what a depth buffer cleared every frame wants.
+    /// The barrier waits for earlier depth writes (the previous frame in flight uses
+    /// the same image), so the transition cannot overwrite them while they run.
     pub fn recordTransitionToAttachment(self: *const DepthBuffer, command_buffer: vk.CommandBuffer) void {
         const barrier = vk.ImageMemoryBarrier{
-            .src_access_mask = .{},
+            .src_access_mask = .{ .depth_stencil_attachment_write = true },
             .dst_access_mask = .{ .depth_stencil_attachment_read = true, .depth_stencil_attachment_write = true },
             .old_layout = .undefined,
             .new_layout = .depth_attachment_optimal,
@@ -80,7 +100,7 @@ pub const DepthBuffer = struct {
         };
         self.vkd.cmdPipelineBarrier(
             command_buffer,
-            .{ .top_of_pipe = true },
+            .{ .early_fragment_tests = true, .late_fragment_tests = true },
             .{ .early_fragment_tests = true, .late_fragment_tests = true },
             .{},
             null,
