@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-zGameLib is **tier T1** of a 3-tier bundle: the low-level Zig game framework. It is consumed by the Nexus engine (tier above) as the `zgame` module. Requires **Zig 0.16.0** (`minimum_zig_version` in `build.zig.zon`). `AGENTS.md` is the per-tier source of truth — keep it and this file in sync.
+zGameLib is **tier T1** of a 3-tier bundle: the low-level Zig game framework. It is consumed by the Nexus engine (tier above) as the `zgame` module. Requires **Zig 0.17.0** (`minimum_zig_version` in `build.zig.zon`). `AGENTS.md` is the per-tier source of truth — keep it and this file in sync.
 
 ## Commands
 
@@ -69,6 +69,6 @@ python scripts/ci.py integration      # test-integration -Dshaderc (auto-wraps x
 
 - `examples/` and `shared/*.md`/`docs/` are **not** shipped: `.paths` in `build.zig.zon` lists only `build.zig`, `build.zig.zon`, `src`, `shared`, `tests`, and license files. Examples are consumers, never part of the library package, and are never built by default `zig build`.
 - `zig build test` needs no display; `test-tdd` and its sub-steps need a real display + a Vulkan driver and otherwise **skip** (gated by `error.SkipZigTest` and per-suite `done` flags inside the test files) rather than fail.
-- `shaderc` (runtime GLSL→SPIR-V) is off by default; enable with `-Dshaderc`. Separately, `hello-triangle` compiles its shaders at build time via the `glslc` system command (needs the Vulkan SDK on PATH).
+- `shaderc` (runtime GLSL→SPIR-V) is off by default; enable with `-Dshaderc`, which links the system shaderc library (`libshaderc-dev` or the Vulkan SDK). Separately, `hello-triangle` compiles its shaders at build time via the `glslc` system command (needs the Vulkan SDK on PATH).
 - The decoupling nm gate deliberately matches only *our* vulkan symbols (`vk.`/`volk`/`vma`/`shaderc_`), not a bare `vk*` grep — SDL3 bundles its own Vulkan loader and is expected in every platform binary.
-- This is a mixed Zig/C/C++ codebase; `cheat_sheet.md` documents the FFI, Zig-0.16 stdlib (Io interface, unmanaged ArrayList, `addExecutable` takes a Module), and build-script traps worth consulting before editing `build.zig` or FFI code.
+- This is a mixed Zig/C/C++ codebase; `cheat_sheet.md` documents the FFI, the Zig 0.16 and 0.17 stdlib changes (Io interface, unmanaged ArrayList, `addExecutable` takes a Module), and build-script traps worth consulting before editing `build.zig` or FFI code.

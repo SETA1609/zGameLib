@@ -114,7 +114,7 @@ test "instance: builds from the platform's required Vulkan extensions" {
     try gate(done.instance_from_platform_extensions);
     var bs = try Bootstrap.init();
     defer bs.deinit();
-    try std.testing.expect(@intFromEnum(bs.instance) != 0);
+    try std.testing.expect(@intFromPtr(bs.instance) != 0);
 }
 
 // WHEN reading platform.requiredVulkanInstanceExtensions · GIVEN a started platform · THEN the list is non-empty (the platform demands at least a surface extension).
@@ -132,7 +132,7 @@ test "surface: a platform window's native handle becomes a non-null Vulkan surfa
     defer bs.deinit();
     const surface = (try bs.surface()) orelse return error.SkipZigTest;
     defer bs.vki.destroySurfaceKHR(bs.instance, surface, null);
-    try std.testing.expect(surface != .null_handle);
+    try std.testing.expect(surface != .null);
 }
 
 // WHEN creating a surface, destroying it, then creating another from the window · GIVEN a bootstrapped instance · THEN the second surface is also non-null (the hand-off repeats).
@@ -144,7 +144,7 @@ test "surface: hand-off works for a second freshly created window" {
     bs.vki.destroySurfaceKHR(bs.instance, a, null);
     const b = (try bs.surface()) orelse return error.SkipZigTest;
     defer bs.vki.destroySurfaceKHR(bs.instance, b, null);
-    try std.testing.expect(b != .null_handle);
+    try std.testing.expect(b != .null);
 }
 
 // WHEN walking the full chain window→instance→surface→device→VMA allocator · GIVEN a display server and Vulkan loader · THEN the VMA allocator is created non-null with no shared type crossing the lib boundary.
@@ -207,5 +207,5 @@ test "shaderc → vulkan: compiled SPIR-V is accepted by vkCreateShaderModule" {
         .p_code = spv.ptr,
     }, null);
     defer dev.vkd.destroyShaderModule(dev.device, module, null);
-    try std.testing.expect(module != .null_handle);
+    try std.testing.expect(module != .null);
 }

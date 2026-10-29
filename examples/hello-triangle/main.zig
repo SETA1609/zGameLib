@@ -35,7 +35,7 @@ pub fn main() !void {
     // Create a render pass for the swapchain format.
     const color_attach = vk.AttachmentDescription{
         .format = sc.format.format,
-        .samples = .{ .@"1_bit" = true },
+        .samples = .{ .@"1" = true },
         .load_op = .clear,
         .store_op = .store,
         .stencil_load_op = .dont_care,
@@ -73,9 +73,11 @@ pub fn main() !void {
     }
     defer for (framebuffers[0..fb_count]) |fb| gpu.vkd.destroyFramebuffer(gpu.device, fb, null);
 
-    // Load compiled SPIR-V shaders (built by glslc via build.zig).
-    const vert_code = @as([]const u32, @ptrCast(@alignCast(@import("shaders/triangle.vert.spv"))));
-    const frag_code = @as([]const u32, @ptrCast(@alignCast(@import("shaders/triangle.frag.spv"))));
+    // Load compiled SPIR-V shaders (built by glslc via build.zig). Zig 0.17's
+    // @import only takes Zig sources, so the bytes come from @embedFile, copied
+    // into 4-byte-aligned constants because Vulkan reads them as u32 words.
+    const vert_code: []const u32 = @ptrCast(&vert_spv_bytes);
+    const frag_code: []const u32 = @ptrCast(&frag_spv_bytes);
 
     const vert_mod = try gpu.vkd.createShaderModule(gpu.device, &.{
         .code_size = vert_code.len * @sizeOf(u32),
@@ -93,13 +95,13 @@ pub fn main() !void {
     const vb_size = @sizeOf(@TypeOf(vertices));
     const vb = try gpu.vkd.createBuffer(gpu.device, &.{
         .size = vb_size,
-        .usage = .{ .vertex_buffer_bit = true },
+        .usage = .{ .vertex_buffer = true },
         .sharing_mode = .exclusive,
     }, null);
     defer gpu.vkd.destroyBuffer(gpu.device, vb, null);
 
     const mem_req = gpu.vkd.getBufferMemoryRequirements(gpu.device, vb);
-    const mem_type = try findMemoryType(gpu.vki, gpu.pdev, mem_req.memory_type_bits, .{ .host_visible_bit = true, .host_coherent_bit = true });
+    const mem_type = try findMemoryType(gpu.vki, gpu.pdev, mem_req.memory_type_bits, .{ .host_visible = true, .host_coherent = true });
     const vb_mem = try gpu.vkd.allocateMemory(gpu.device, &.{
         .allocation_size = mem_req.size,
         .memory_type_index = mem_type,
@@ -131,8 +133,8 @@ pub fn main() !void {
     const pipe_ci = vk.GraphicsPipelineCreateInfo{
         .stage_count = 2,
         .p_stages = @ptrCast(&[_]vk.PipelineShaderStageCreateInfo{
-            .{ .stage = .{ .vertex_bit = true }, .module = vert_mod, .p_name = "main" },
-            .{ .stage = .{ .fragment_bit = true }, .module = frag_mod, .p_name = "main" },
+            .{ .stage = .{ .vertex = true }, .module = vert_mod, .p_name = "main" },
+            .{ .stage = .{ .fragment = true }, .module = frag_mod, .p_name = "main" },
         }),
         .p_vertex_input_state = &vk.PipelineVertexInputStateCreateInfo{
             .vertex_binding_description_count = 1,
@@ -153,7 +155,7 @@ pub fn main() !void {
             .depth_clamp_enable = .false,
             .rasterizer_discard_enable = .false,
             .polygon_mode = .fill,
-            .cull_mode = .{ .back_bit = true },
+            .cull_mode = .{ .back = true },
             .front_face = .clockwise,
             .depth_bias_enable = .false,
             .depth_bias_constant_factor = 0,
@@ -162,7 +164,7 @@ pub fn main() !void {
             .line_width = 1.0,
         },
         .p_multisample_state = &vk.PipelineMultisampleStateCreateInfo{
-            .rasterization_samples = .{ .@"1_bit" = true },
+            .rasterization_samples = .{ .@"1" = true },
             .sample_shading_enable = .false,
             .min_sample_shading = 0,
             .p_sample_mask = null,
@@ -182,7 +184,7 @@ pub fn main() !void {
                 .src_alpha_blend_factor = .one,
                 .dst_alpha_blend_factor = .zero,
                 .alpha_blend_op = .add,
-                .color_write_mask = .{ .r_bit = true, .g_bit = true, .b_bit = true, .a_bit = true },
+                .color_write_mask = .{ .r = true, .g = true, .b = true, .a = true },
             }}),
             .blend_constants = .{ 0, 0, 0, 0 },
         },
@@ -190,11 +192,11 @@ pub fn main() !void {
         .layout = pipe_layout,
         .render_pass = render_pass,
         .subpass = 0,
-        .base_pipeline_handle = .null_handle,
+        .base_pipeline_handle = .null,
         .base_pipeline_index = -1,
     };
     var pipelines: [1]vk.Pipeline = .{undefined};
-    _ = try gpu.vkd.createGraphicsPipelines(gpu.device, .null_handle, &.{pipe_ci}, null, &pipelines);
+    _ = try gpu.vkd.createGraphicsPipelines(gpu.device, .null, &.{pipe_ci}, null, &pipelines);
     const pipeline = pipelines[0];
     defer gpu.vkd.destroyPipeline(gpu.device, pipeline, null);
 
@@ -227,7 +229,7 @@ pub fn main() !void {
 
         gpu.vkd.cmdEndRenderPass(f.cmd);
 
-        try frames.end(&sc, f, .{ .color_attachment_output_bit = true });
+        try frames.end(&sc, f, .{ .color_attachment_output = true });
     }
     gpu.waitIdle();
 }
@@ -249,3 +251,6 @@ fn findMemoryType(vki: vk.InstanceWrapper, pdev: vk.PhysicalDevice, type_bits: u
     }
     return error.NoSuitableMemoryType;
 }
+
+const vert_spv_bytes align(@alignOf(u32)) = @embedFile("shaders/triangle.vert.spv").*;
+const frag_spv_bytes align(@alignOf(u32)) = @embedFile("shaders/triangle.frag.spv").*;

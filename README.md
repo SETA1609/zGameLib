@@ -97,7 +97,7 @@ Summary: `src/` (framework modules) · `shared/` (Gpu, FrameRing, …) ·
 
 ## Build & test
 
-Requires **Zig 0.16+**. After cloning:
+Requires **Zig 0.17.0**. After cloning:
 
 ```sh
 git submodule update --init --recursive

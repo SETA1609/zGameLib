@@ -76,7 +76,7 @@ pub fn create(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.bui
         compile_steps.append(b.allocator, compile_step) catch @panic("OOM");
 
         const run = b.addRunArtifact(exe);
-        if (b.args) |args| run.addArgs(args);
+        run.addPassthruArgs();
         b.step("run-hello-triangle", "Build + run the hello-triangle example")
             .dependOn(&run.step);
     }
@@ -148,14 +148,18 @@ fn add(
     compile_steps.append(b.allocator, compile_step) catch @panic("OOM");
 
     const run = b.addRunArtifact(exe);
-    if (b.args) |args| run.addArgs(args);
+    run.addPassthruArgs();
     const run_step = b.step(b.fmt("run-{s}", .{opts.name}), b.fmt("Build + run the {s} example", .{opts.name}));
     run_step.dependOn(&run.step);
     run_steps.append(b.allocator, run_step) catch @panic("OOM");
 }
 
+/// `name` is `<file>.<stage>` (for example `triangle.vert`); glslc cannot infer
+/// the stage from a `.glsl` extension, so it is passed with `-fshader-stage`.
 fn addShader(b: *std.Build, name: []const u8, glsl_path: std.Build.LazyPath) std.Build.LazyPath {
     const glslc = b.addSystemCommand(&.{"glslc"});
+    const shader_stage = std.fs.path.extension(name)[1..];
+    glslc.addArg(b.fmt("-fshader-stage={s}", .{shader_stage}));
     glslc.addArg("-o");
     const spv_path = glslc.addOutputFileArg(b.fmt("{s}.spv", .{name}));
     glslc.addFileArg(glsl_path);
