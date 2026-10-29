@@ -25,6 +25,7 @@ pub extern fn glmc_vec3_normalize_to(v: *const vec3, dest: *vec3) void;
 pub extern fn glmc_mat4_mul(m1: *const mat4, m2: *const mat4, dest: *mat4) void;
 pub extern fn glmc_mat4_mulv(m: *const mat4, v: *const vec4, dest: *vec4) void;
 pub extern fn glmc_mat4_transpose(m: *mat4) void;
+pub extern fn glmc_mat4_det(mat: *const mat4) f32;
 pub extern fn glmc_mat4_inv(mat: *const mat4, dest: *mat4) void;
 pub extern fn glmc_translate_make(m: *mat4, v: *const vec3) void;
 pub extern fn glmc_rotate_make(m: *mat4, angle: f32, axis: *const vec3) void;
