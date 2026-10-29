@@ -6,6 +6,7 @@ Usage:
   python scripts/ci.py decoupling   # nm: platform-only binary pulls none of our vulkan stack
   python scripts/ci.py integration  # cross-lib test-integration (xvfb on headless Linux)
   python scripts/ci.py tdd          # full behavioral suite (test-tdd, xvfb on headless Linux)
+  python scripts/ci.py sync-validation  # run depth-cube under Khronos synchronization validation
 """
 
 import os
@@ -38,6 +39,7 @@ class Command(StrEnum):
     DECOUPLING = "decoupling"
     INTEGRATION = "integration"
     TDD = "tdd"
+    SYNC_VALIDATION = "sync-validation"
 
 
 # ── zig build-step enum ─────────────────────────────────────────────────────
@@ -48,6 +50,7 @@ class ZigStep(StrEnum):
     CLEAR_COLOR_2 = "clear-color-2"
     TEST_INTEGRATION = "test-integration"
     TEST_TDD = "test-tdd"
+    RUN_DEPTH_CUBE = "run-depth-cube"
 
 
 # ── tool / subcommand arg enum ──────────────────────────────────────────────
@@ -153,6 +156,49 @@ def cmd_tdd():
     _build_with_display(ZigStep.TEST_TDD)
 
 
+VALIDATION_LAYER_NAME = "VK_LAYER_KHRONOS_validation"
+VALIDATION_LAYER_MANIFEST_DIRECTORIES = [
+    "/usr/share/vulkan/explicit_layer.d",
+    "/usr/local/share/vulkan/explicit_layer.d",
+    "/etc/vulkan/explicit_layer.d",
+]
+SYNC_VALIDATION_FRAME_COUNT = 30
+
+
+def find_validation_layer_manifest():
+    for directory in VALIDATION_LAYER_MANIFEST_DIRECTORIES:
+        manifest = Path(directory) / "VkLayer_khronos_validation.json"
+        if manifest.is_file():
+            return manifest
+    return None
+
+
+def cmd_sync_validation():
+    """Run depth-cube for a few frames with the Khronos validation layer and its
+    synchronization validation on; fail on any validation error, so missing
+    barriers (write-after-write, write-after-read hazards) cannot return."""
+    if find_validation_layer_manifest() is None and not os.environ.get("VK_LAYER_PATH"):
+        print(f"{VALIDATION_LAYER_NAME} not installed; sync validation skipped")
+        return
+    ensure_display_deps()
+    cmd = [CmdArg.ZIG, CmdArg.BUILD, ZigStep.RUN_DEPTH_CUBE, "--", "--frames", str(SYNC_VALIDATION_FRAME_COUNT)]
+    if need_xvfb():
+        cmd = [CmdArg.XVFB_RUN, "-a"] + cmd
+    env_merged = os.environ.copy()
+    env_merged["VK_INSTANCE_LAYERS"] = VALIDATION_LAYER_NAME
+    env_merged["VK_KHRONOS_VALIDATION_VALIDATE_SYNC"] = "true"
+    print(f"== {' '.join(cmd)} (synchronization validation) ==")
+    result = subprocess.run(cmd, cwd=PROJECT_ROOT, env=env_merged, capture_output=True, text=True)
+    output = result.stdout + result.stderr
+    error_ids = re.findall(r"\[ ((?:SYNC-HAZARD|VUID)-[A-Za-z0-9_-]+) \]", output)
+    if result.returncode != 0 or "Validation Error" in output:
+        print(output[-4000:])
+        counts = {error_id: error_ids.count(error_id) for error_id in sorted(set(error_ids))}
+        print(f"::error::depth-cube: exit code {result.returncode}, validation errors {counts}")
+        sys.exit(EXIT_FAILURE)
+    print(f"clean — depth-cube ran {SYNC_VALIDATION_FRAME_COUNT} frames with no validation errors")
+
+
 DEFAULT_COMMAND = Command.CHECK
 
 COMMANDS = {
@@ -160,6 +206,7 @@ COMMANDS = {
     Command.DECOUPLING: cmd_decoupling,
     Command.INTEGRATION: cmd_integration,
     Command.TDD: cmd_tdd,
+    Command.SYNC_VALIDATION: cmd_sync_validation,
 }
 
 

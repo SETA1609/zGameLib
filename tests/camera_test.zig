@@ -37,6 +37,15 @@ test "multiplying by the identity matrix leaves a matrix unchanged" {
     try std.testing.expectEqual(translation, translation.multiply(Matrix4.identity));
 }
 
+test "multiplying applies the right-hand matrix first" {
+    const move = Matrix4.computeTranslation(.{ .x = 5, .y = 0, .z = 0 });
+    const rotate = Matrix4.computeRotationAroundYAxis(std.math.pi / 2.0);
+    // Rotate (1, 0, 0) to (0, 0, -1) first, then move it 5 along X.
+    try expectHomogeneousPoint(.{ 5, 0, -1, 1 }, move.multiply(rotate).transformPoint(.{ .x = 1, .y = 0, .z = 0 }));
+    // The other order moves first, then rotates (6, 0, 0) to (0, 0, -6).
+    try expectHomogeneousPoint(.{ 0, 0, -6, 1 }, rotate.multiply(move).transformPoint(.{ .x = 1, .y = 0, .z = 0 }));
+}
+
 test "a translation moves a point by its offset" {
     const translation = Matrix4.computeTranslation(.{ .x = 1, .y = 2, .z = 3 });
     try expectHomogeneousPoint(.{ 1, 2, 3, 1 }, translation.transformPoint(.{ .x = 0, .y = 0, .z = 0 }));

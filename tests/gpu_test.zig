@@ -162,6 +162,27 @@ test "DepthBuffer creates a depth image and view sized to the extent" {
     try std.testing.expectEqual(@as(u32, 48), depth_buffer.extent.height);
 }
 
+// WHEN asking which depth format to use · THEN it is a candidate the device supports as an optimal-tiling depth attachment.
+test "findSupportedDepthFormat returns a candidate the device supports as a depth attachment" {
+    try gate(done.three_dimensional_path);
+    var h = try initThreeDimensionalHarness();
+    defer h.deinit();
+    const depth_format = try zgame.findSupportedDepthFormat(&h.gpu);
+    try std.testing.expect(std.mem.indexOfScalar(vk.Format, &zgame.depth_format_candidates, depth_format) != null);
+    const format_properties = h.gpu.vki.getPhysicalDeviceFormatProperties(h.gpu.pdev, depth_format);
+    try std.testing.expect(format_properties.optimal_tiling_features.depth_stencil_attachment);
+}
+
+// WHEN creating a DepthBuffer · THEN it uses the format findSupportedDepthFormat picks.
+test "DepthBuffer.create uses the supported depth format" {
+    try gate(done.three_dimensional_path);
+    var h = try initThreeDimensionalHarness();
+    defer h.deinit();
+    var depth_buffer = try zgame.DepthBuffer.create(&h.gpu, .{ .width = 16, .height = 16 });
+    defer depth_buffer.destroy();
+    try std.testing.expectEqual(try zgame.findSupportedDepthFormat(&h.gpu), depth_buffer.format);
+}
+
 // WHEN recreating a DepthBuffer for a new extent · THEN it takes the new size.
 test "DepthBuffer.recreate resizes to the new extent" {
     try gate(done.three_dimensional_path);

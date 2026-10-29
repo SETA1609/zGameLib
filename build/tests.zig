@@ -30,6 +30,15 @@ pub fn create(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.bui
     camera_test_module.addImport("camera", m.camera);
     unit.dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = camera_test_module })).step);
 
+    const depth_format_test_module = b.createModule(.{
+        .root_source_file = b.path("tests/depth_format_test.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    depth_format_test_module.addImport("depth", m.depth);
+    depth_format_test_module.addImport("vulkan_stack", m.vulkan_dep.module("vulkan_stack"));
+    unit.dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = depth_format_test_module })).step);
+
     const itest_mod = b.createModule(.{
         .root_source_file = b.path("tests/integration_test.zig"),
         .target = target,
