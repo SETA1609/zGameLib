@@ -2,7 +2,7 @@
 //!
 //! Creates and wires all Zig modules used by the framework and its consumers:
 //! dependency resolution (platform, vulkan_stack), shared middleware modules
-//! (surface, swapchain, gpu, frame), and the top-level framework modules
+//! (surface, swapchain, gpu, frame, and the 3D path's camera, depth, mesh), and the top-level framework modules
 //! (zgame, zgame_platform).
 //!
 //! Output: `Modules` — a struct holding every module + dependency reference.
@@ -15,6 +15,9 @@ pub const Modules = struct {
     swapchain: *std.Build.Module,
     gpu: *std.Build.Module,
     frame: *std.Build.Module,
+    camera: *std.Build.Module,
+    depth: *std.Build.Module,
+    mesh: *std.Build.Module,
     animation: *std.Build.Module,
     zgame: *std.Build.Module,
     zgame_platform: *std.Build.Module,
@@ -78,6 +81,27 @@ pub fn create(
     frame.addImport("vulkan_stack", vulkan_dep.module("vulkan_stack"));
     frame.addImport("swapchain", swapchain);
 
+    // The 3D path, beside the 2D one: pure camera math, a depth buffer, an indexed mesh.
+    const camera = b.createModule(.{
+        .root_source_file = b.path("shared/camera.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    const depth = b.createModule(.{
+        .root_source_file = b.path("shared/depth.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    depth.addImport("vulkan_stack", vulkan_dep.module("vulkan_stack"));
+
+    const mesh = b.createModule(.{
+        .root_source_file = b.path("shared/mesh.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    mesh.addImport("vulkan_stack", vulkan_dep.module("vulkan_stack"));
+
     const animation = b.createModule(.{
         .root_source_file = b.path("shared/animation.zig"),
         .target = target,
@@ -96,6 +120,9 @@ pub fn create(
     zgame.addImport("swapchain", swapchain);
     zgame.addImport("gpu", gpu);
     zgame.addImport("frame", frame);
+    zgame.addImport("camera", camera);
+    zgame.addImport("depth", depth);
+    zgame.addImport("mesh", mesh);
     zgame.addImport("zclip", zclip_dep.module("zclip"));
     zgame.addImport("animation", animation);
     zgame.addImport("backend", backend_mod);
@@ -116,6 +143,9 @@ pub fn create(
         .swapchain = swapchain,
         .gpu = gpu,
         .frame = frame,
+        .camera = camera,
+        .depth = depth,
+        .mesh = mesh,
         .animation = animation,
         .zgame = zgame,
         .zgame_platform = zgame_platform,

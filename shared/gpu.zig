@@ -29,11 +29,16 @@ pub const Gpu = struct {
     device: vk.Device,
     vkd: vk.DeviceWrapper,
     queue: vk.Queue,
+    /// Whether the device was created with Vulkan 1.3 dynamic rendering (the 3D path).
+    dynamic_rendering_enabled: bool,
 
     pub const Options = struct {
         app_name: [*:0]const u8 = "zgame",
         /// Packed as `@bitCast(vk.API_VERSION_x_y)`.
         api_version: u32 = @bitCast(vk.API_VERSION_1_3),
+        /// Enable Vulkan 1.3 dynamic rendering (`cmdBeginRendering`) for the 3D path.
+        /// Off by default, so the 2D path's render-pass devices are unchanged.
+        enable_dynamic_rendering: bool = false,
     };
 
     /// Loader → instance → surface → device → queue. The window supplies both
@@ -93,6 +98,8 @@ pub const Gpu = struct {
             .device = device,
             .vkd = vkd,
             .queue = queue,
+            // Not implemented yet: the option is accepted but the device never enables it.
+            .dynamic_rendering_enabled = false,
         };
     }
 
@@ -114,6 +121,17 @@ pub const Gpu = struct {
         };
         try chain.init(want);
         return chain;
+    }
+
+    /// The first memory type allowed by `memory_type_bits` (from a resource's
+    /// memory requirements) that has every flag in `required_properties`.
+    pub fn findMemoryTypeIndex(
+        self: *const Gpu,
+        memory_type_bits: u32,
+        required_properties: vk.MemoryPropertyFlags,
+    ) error{NoSuitableMemoryType}!u32 {
+        _ = .{ self, memory_type_bits, required_properties };
+        @panic("not implemented");
     }
 
     /// Block until the device is idle — call before tearing frame resources down.
