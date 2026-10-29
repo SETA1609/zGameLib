@@ -4,9 +4,10 @@
 > rung 2 and adds the 3D building blocks: dynamic rendering, `DepthBuffer`,
 > `IndexedMesh`, and `PerspectiveCamera`. It is the `hello-cube` row of the
 > [ladder](ladder.md)'s validation track. Theory:
-> [11](../theory/11-vectors-and-matrices.md),
-> [12](../theory/12-cameras-and-vulkan-clip-space.md),
-> [13](../theory/13-depth-buffers-meshes-and-dynamic-rendering.md).
+> [11](../theory/11-vectors.md),
+> [12](../theory/12-matrices.md),
+> [13](../theory/13-cameras-and-vulkan-clip-space.md),
+> [14](../theory/14-depth-buffers-meshes-and-dynamic-rendering.md).
 
 ## What it does
 
@@ -61,7 +62,7 @@ mesh → depth buffer → frame ring → swapchain → `Gpu` → window → plat
 The cube's corners are at ±1 in its own space. Each frame the CPU multiplies one
 matrix, projection · view · model, and pushes its 64 bytes; the vertex shader
 does `mvp * vec4(position, 1.0)`; Vulkan clips, divides by `w`, and maps to
-pixels and a 0..1 depth; the depth test keeps the nearest fragment. File 12 walks
+pixels and a 0..1 depth; the depth test keeps the nearest fragment. File 13 walks
 through each step with the formulas, and `tests/camera_test.zig` checks them on
 the CPU.
 
@@ -76,7 +77,7 @@ the CPU.
 
 The depth buffer is one image shared by both frames in flight, and its per-frame
 barrier does not wait for the previous frame's depth writes. See
-[file 13, section 1](../theory/13-depth-buffers-meshes-and-dynamic-rendering.md#1-why-a-depth-buffer).
+[file 14, section 1](../theory/14-depth-buffers-meshes-and-dynamic-rendering.md#1-why-a-depth-buffer).
 Standard validation does not report it; the synchronization validation layer
 would.
 

@@ -1,9 +1,9 @@
-# 13 — Depth buffers, indexed meshes, and dynamic rendering
+# 14 — Depth buffers, indexed meshes, and dynamic rendering
 
 *The three GPU pieces of the 3D path: the depth buffer that sorts surfaces per
 pixel, the indexed mesh that shares vertices between triangles, and the
 render-pass-free way of drawing that both plug into. Read
-[file 12](12-cameras-and-vulkan-clip-space.md) first.*
+[file 13](13-cameras-and-vulkan-clip-space.md) first.*
 
 File 12 ended with every vertex at a pixel position plus a **depth**, a number
 from 0 (near plane) to 1 (far plane). This file is about what the GPU does with
@@ -42,7 +42,7 @@ depth with the stored one:
 > `0`."
 > — [Vulkan spec, *Depth Comparison*](https://registry.khronos.org/vulkan/specs/latest/html/vkspec.html#fragops-depth-comparison)
 
-z<sub>f</sub> is the fragment's depth from the viewport transform (file 12,
+z<sub>f</sub> is the fragment's depth from the viewport transform (file 13,
 section 4); z<sub>a</sub> is the value already in the depth attachment. "Coverage
 set to 0" means the fragment is thrown away. `depth-cube` uses `.less`:
 
@@ -73,7 +73,7 @@ all three:
 ```
 
 Clearing to 1.0, the far plane, means the first fragment drawn on any pixel
-always passes. Depth 1.0 is the largest value the projection produces (file 12,
+always passes. Depth 1.0 is the largest value the projection produces (file 13,
 section 4), so nothing visible is ever rejected by the clear value.
 
 ### What `DepthBuffer` owns
@@ -299,7 +299,7 @@ depth_buffer.recordTransitionToAttachment()      UNDEFINED → DEPTH_ATTACHMENT_
 cmdBeginRendering(colour + depth attachments, both cleared)
     cmdSetViewport / cmdSetScissor                whole swapchain, depth 0..1
     cmdBindPipeline
-    cmdPushConstants(model-view-projection)       file 12, section 5
+    cmdPushConstants(model-view-projection)       file 13, section 5
     cube_mesh.recordDraw()                        bind vertex + index buffers, draw 36 indices
 cmdEndRendering
 transitionImage(swapchain image: COLOR_ATTACHMENT_OPTIMAL → PRESENT_SRC_KHR)
@@ -318,10 +318,10 @@ None of these are built yet; each would be its own issue.
 - Fix the depth barrier's source scope (section 1).
 - Pick the depth format from what the device supports, with an `X8_D24`
   fallback (section 1).
-- Back-face culling, with `front_face` chosen for the flipped Y (file 12,
+- Back-face culling, with `front_face` chosen for the flipped Y (file 13,
   section 4).
 - Staging uploads into device-local memory for large meshes.
-- Reverse-Z for large scenes (file 12, section 6).
+- Reverse-Z for large scenes (file 13, section 6).
 - An orthographic projection, and a camera stored as position + rotation for
   free-look.
 

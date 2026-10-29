@@ -1,8 +1,8 @@
-# 12 — Cameras and Vulkan clip space: from a world point to a pixel
+# 13 — Cameras and Vulkan clip space: from a world point to a pixel
 
 *How the model, view, and projection matrices are built, what Vulkan does with
 the result, and why zGameLib's projection has a negative Y and a 0..1 depth
-formula. Read [file 11](11-vectors-and-matrices.md) first.*
+formula. Read [file 11](11-vectors.md) and [file 12](12-matrices.md) first.*
 
 A vertex goes through five coordinate spaces on its way to the screen. You write
 the first three steps as matrices; Vulkan's fixed-function hardware does the last
@@ -26,7 +26,7 @@ const model_view_projection = camera.computeViewProjectionMatrix(aspect_ratio)
     .multiply(zgame.Matrix4.computeRotationAroundYAxis(rotation_angle_radians));
 ```
 
-Read right to left (file 11, section 4): rotate the cube (model), then view, then
+Read right to left (file 12, section 4): rotate the cube (model), then view, then
 project. `computeViewProjectionMatrix` is `projection · view` (test: "the
 view-projection matrix is the projection times the view").
 
@@ -47,7 +47,8 @@ projection are shared.
 The GPU has no concept of a camera. "Moving the camera right" is done by moving
 the *whole world* left. The **view matrix** is that move: it re-expresses every
 world point in the camera's own axes, with the camera at the origin looking down
-**-Z** (the right-handed convention from file 11).
+**-Z** (the right-handed convention from file 11, section 1). It is the inverse of
+the camera's placement in the world (file 12, section 5).
 
 `PerspectiveCamera` describes the camera by where it is and what it looks at:
 
@@ -64,7 +65,7 @@ pub const PerspectiveCamera = struct {
 ```
 
 `computeViewMatrix` builds the camera's three axes with the vector operations
-from file 11:
+from file 11 (sections 4–6):
 
 ```zig
 const forward = camera.target.subtract(camera.position).normalize();
@@ -80,7 +81,7 @@ const up = right.computeCrossProduct(forward);
    right angles, so the result is already unit length.
 
 Now each axis becomes a **row** of the matrix. Multiplying a point by a row is a
-dot product, which measures the point along that axis (file 11, section 1):
+dot product, which measures the point along that axis (file 11, section 5):
 
 ```
 | right.x     right.y     right.z    −right·position   |
@@ -301,7 +302,7 @@ Three things line up here, and all three are deliberate:
 2. **Convention.** GLSL's `matrix * vector` treats the vector as a column, the
    same column-vector convention as `Matrix4.multiply` and `transformPoint`.
 3. **Homogeneous point.** `vec4(vertex_position, 1.0)` is the `w = 1` point from
-   file 11. `gl_Position` is the clip-space position, and the GPU does the
+   file 12, section 3. `gl_Position` is the clip-space position, and the GPU does the
    clipping, the divide by `w`, and the viewport transform from section 4.
 
 `transformPoint` on the CPU computes exactly what this shader computes on the
