@@ -49,6 +49,14 @@ python scripts/ci.py integration      # test-integration -Dshaderc (auto-wraps x
 ./scripts/ci.sh check                 # bash equivalent for local Linux debugging
 ```
 
+## Workflow
+
+Every issue that adds or changes behaviour lands as separate commits in this order, so a reviewer can see the API and the failing tests existed before the code:
+
+1. **API.** Public types, fields, doc comments, error sets, and signatures, with stub bodies that `@panic("not implemented")`. The build passes.
+2. **Tests.** Tests against that API: `zig build test` for pure code, `test-tdd` suites for GPU and display code. They compile and fail; the commit message records the failing run.
+3. **Implement.** Make the tests pass without changing the tests or the public signatures. Docs, examples, and the changelog come with it. If a test or signature turns out wrong, fix it in its own commit first and say why.
+
 ## Architecture
 
 **libs-first / link-the-artifact DAG.** Three sibling libraries under `libs/` (git submodules) each build their own static-library artifact and expose a Zig module: `platform` (zig-cpp-platform-stack-adapter, SDL3 windowing+input), `vulkan_stack` (zig-cpp-vulkan-stack-adapter — vk + volk + VMA + shaderc + per-OS surface creators), and `zclip` (sprite/skeletal animation data). `build.zig`'s `pipeline` step drives them topologically: `build-platform` + `build-vulkan_stack` + `build-zclip` → `build-framework` → install.
