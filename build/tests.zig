@@ -19,8 +19,16 @@ pub const TestSteps = struct {
 
 pub fn create(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, m: Modules) TestSteps {
     const unit_tests = b.addTest(.{ .root_module = m.zgame });
-    const unit = b.step("test", "Analyze + link the framework module");
+    const unit = b.step("test", "Analyze + link the framework module, and run the camera math spec");
     unit.dependOn(&b.addRunArtifact(unit_tests).step);
+
+    const camera_test_module = b.createModule(.{
+        .root_source_file = b.path("tests/camera_test.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    camera_test_module.addImport("camera", m.camera);
+    unit.dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = camera_test_module })).step);
 
     const itest_mod = b.createModule(.{
         .root_source_file = b.path("tests/integration_test.zig"),
