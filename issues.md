@@ -4,6 +4,17 @@ Each issue is one PR. Status is `todo`, `doing`, `review`, `done`, or `dropped`.
 
 ---
 
+## Issue 7 — Add a cglm math adapter
+
+Status: doing
+Needs: —
+
+Add `libs/zig-c-math-stack-adapter` (interim name), a standalone Zig package shaped like the platform and Vulkan adapters (own `build.zig`, `build.zig.zon`, `LICENSE`, `README.md`, `issues.md`, `CHANGELOG.md`, tests), which builds cglm (C, MIT, pinned by commit) as a static library and wraps it as Zig types: `Vector3`, `Vector4`, `Matrix4` with multiply, transform, transpose, inverse, translation, rotation, right-handed look-at, and a Vulkan perspective (depth 0..1, y down). It lives in this repository, not as a submodule, until its API settles; then it moves to its own repository like the other adapters. zGameLib imports it as a path dependency and re-exports it as `zgame.math_stack`. `shared/camera.zig` is not changed by this issue.
+
+Done when: the adapter's `zig build test` passes with no display or GPU; zGameLib's `zig build`, `zig build test`, and the decoupling gate pass; the adapter's README states its conventions.
+
+---
+
 ## Issue 1 — Port to Zig 0.17.0
 
 Status: review

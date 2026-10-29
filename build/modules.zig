@@ -24,6 +24,7 @@ pub const Modules = struct {
     platform_dep: *std.Build.Dependency,
     vulkan_dep: *std.Build.Dependency,
     zclip_dep: *std.Build.Dependency,
+    math_stack_dep: *std.Build.Dependency,
 };
 
 pub fn create(
@@ -36,6 +37,7 @@ pub fn create(
     const platform_dep = b.dependency("platform", .{ .target = target, .optimize = optimize });
     const vulkan_dep = b.dependency("vulkan_stack", .{ .target = target, .optimize = optimize, .shaderc = enable_shaderc });
     const zclip_dep = b.dependency("zclip", .{ .target = target, .optimize = optimize });
+    const math_stack_dep = b.dependency("math_stack", .{ .target = target, .optimize = optimize });
 
     const zgame_opts = b.addOptions();
     zgame_opts.addOption([]const u8, "gfx_backend", gfx_backend);
@@ -124,6 +126,8 @@ pub fn create(
     zgame.addImport("depth", depth);
     zgame.addImport("mesh", mesh);
     zgame.addImport("zclip", zclip_dep.module("zclip"));
+    // The math_stack module links its own static cglm library.
+    zgame.addImport("math_stack", math_stack_dep.module("math_stack"));
     zgame.addImport("animation", animation);
     zgame.addImport("backend", backend_mod);
     zgame.linkLibrary(platform_dep.artifact("platform"));
@@ -152,5 +156,6 @@ pub fn create(
         .platform_dep = platform_dep,
         .vulkan_dep = vulkan_dep,
         .zclip_dep = zclip_dep,
+        .math_stack_dep = math_stack_dep,
     };
 }

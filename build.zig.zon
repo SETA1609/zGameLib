@@ -10,6 +10,9 @@
         .platform = .{ .path = "libs/zig-cpp-platform-stack-adapter" },
         .vulkan_stack = .{ .path = "libs/zig-cpp-vulkan-stack-adapter" },
         .zclip = .{ .path = "libs/zClip" },
+        // In-tree (not a submodule) until its API settles and it moves to its
+        // own repository: vector and matrix math over cglm.
+        .math_stack = .{ .path = "libs/zig-c-math-stack-adapter" },
     },
 
     .paths = .{

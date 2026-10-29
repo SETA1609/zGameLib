@@ -1,0 +1,31 @@
+.{
+    // Package identity. Interim name; see README.md.
+    .name = .math_stack_adapter,
+
+    // SemVer. Bumps with breaking changes to the public Zig API (src/root.zig).
+    .version = "0.0.0",
+
+    // Stable u64 fingerprint identifying this package across renames and forks.
+    .fingerprint = 0x2d3f4471963124a7,
+
+    .minimum_zig_version = "0.17.0",
+
+    // Zig dependencies.
+    //   - cglm — recp/cglm v0.9.6 (MIT), pinned by commit. Built as a static
+    //            library by build/modules.zig; its LICENSE ships in the package.
+    .dependencies = .{
+        .cglm = .{
+            .url = "git+https://github.com/recp/cglm.git#144d1e7c29b3b0c6dede7917a0476cc95248559c",
+            .hash = "N-V-__8AAGApJACv6OGRSLZEdwbH9P68sV3B96LAZsZ21_4C",
+        },
+    },
+
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "build",
+        "src",
+        "LICENSE",
+        "README.md",
+    },
+}
