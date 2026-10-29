@@ -63,6 +63,23 @@ pub const transitionImage = gpu_mod.transitionImage;
 /// The **frames-in-flight** ring + the begin/record/end frame seam. See frame.zig.
 pub const FrameRing = frame_mod.FrameRing;
 
+// --- The 3D path (beside the 2D one; opt-in via `Gpu.Options.enable_dynamic_rendering`) -
+
+/// Perspective camera math in Vulkan conventions (`Matrix4`, `Vector3`,
+/// `PerspectiveCamera`). Pure math, no GPU. See camera.zig.
+pub const camera = @import("camera");
+pub const Matrix4 = camera.Matrix4;
+pub const Vector3 = camera.Vector3;
+pub const PerspectiveCamera = camera.PerspectiveCamera;
+/// A D32 depth image + view sized to the swapchain. See depth.zig.
+pub const DepthBuffer = @import("depth").DepthBuffer;
+/// The depth format choice behind `DepthBuffer.create`. See depth.zig.
+pub const depth_format_candidates = @import("depth").depth_format_candidates;
+pub const chooseFirstSupportedDepthFormat = @import("depth").chooseFirstSupportedDepthFormat;
+pub const findSupportedDepthFormat = @import("depth").findSupportedDepthFormat;
+/// One vertex buffer + one 16-bit index buffer, drawn with `recordDraw`. See mesh.zig.
+pub const IndexedMesh = @import("mesh").IndexedMesh;
+
 // --- High-level framework layer -------------------------------------------
 
 /// The application harness: window + frame loop. *(stub — being built out)*

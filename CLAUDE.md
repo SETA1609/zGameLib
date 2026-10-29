@@ -33,6 +33,7 @@ zig build event-logger       # rung 0 — platform-only (imports zgame_platform,
 zig build clear-color        # rung 1 — full framework, raw surface hand-off
 zig build clear-color-2      # rung 2 — same app rebuilt on Gpu/FrameRing helpers
 zig build hello-triangle     # rung 2+ — pipeline + VMA vertex buffer; compiles shaders via `glslc`
+zig build depth-cube         # 3D path — dynamic rendering + DepthBuffer + IndexedMesh + PerspectiveCamera; `run-depth-cube -- --frames N`
 # animation-demo / audio-demo / asset-demo / app-demo are STUBS (panic / await future libs)
 ```
 
@@ -42,6 +43,7 @@ Docker + CI mirrors (run the exact CI gates locally):
 python scripts/ci.py check            # fmt + compile-check event-logger/clear-color/clear-color-2
 python scripts/ci.py decoupling       # nm gate: platform-only binary has zero vulkan-stack symbols
 python scripts/ci.py integration      # test-integration -Dshaderc (auto-wraps xvfb-run if headless)
+python scripts/ci.py sync-validation  # depth-cube under Khronos synchronization validation; fails on any validation error
 
 ./scripts/build-in-docker.sh [step]   # runs `zig build <step>` in the container (default: pipeline)
 ./scripts/shell.sh                    # interactive container shell
@@ -70,6 +72,7 @@ Every issue that adds or changes behaviour lands as separate commits in this ord
 - `swapchain.zig` — reusable swapchain (format/present-mode/recreation policy).
 - `gpu.zig` — `Gpu.init(window, .{})`: loader → instance → surface → device → present queue, all public fields.
 - `frame.zig` — `FrameRing(N)`: comptime `N` frames-in-flight (fixed-size arrays, no allocation); begin → record → end (acquire → submit → present) seam; handles `OutOfDateKHR` swapchain recreation (`begin` returns `null` to skip the iteration).
+- The 3D path, beside the 2D one (opt-in with `Gpu.Options.enable_dynamic_rendering`): `camera.zig` (pure `Matrix4`/`Vector3`/`PerspectiveCamera` math in Vulkan conventions), `depth.zig` (`DepthBuffer`), `mesh.zig` (`IndexedMesh`). `examples/depth-cube` uses all three.
 - `animation.zig` — unified timeline/playback API over `zclip`; **scaffold only, nothing implemented** (`src/app.zig`'s `App` is likewise a stub — bodies `@panic`).
 
 **Comptime usage:** OS-branch selection in the surface bridge; `FrameRing(max_frames)` makes the frame count part of the type; `surface.zig` `@compileError`s on unsupported OS targets.

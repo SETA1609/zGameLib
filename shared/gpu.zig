@@ -29,11 +29,16 @@ pub const Gpu = struct {
     device: vk.Device,
     vkd: vk.DeviceWrapper,
     queue: vk.Queue,
+    /// Whether the device was created with Vulkan 1.3 dynamic rendering (the 3D path).
+    dynamic_rendering_enabled: bool,
 
     pub const Options = struct {
         app_name: [*:0]const u8 = "zgame",
         /// Packed as `@bitCast(vk.API_VERSION_x_y)`.
         api_version: u32 = @bitCast(vk.API_VERSION_1_3),
+        /// Enable Vulkan 1.3 dynamic rendering (`cmdBeginRendering`) for the 3D path.
+        /// Off by default, so the 2D path's render-pass devices are unchanged.
+        enable_dynamic_rendering: bool = false,
     };
 
     /// Loader → instance → surface → device → queue. The window supplies both
@@ -69,7 +74,9 @@ pub const Gpu = struct {
 
         const prio = [_]f32{1.0};
         const sc_ext: [*:0]const u8 = "VK_KHR_swapchain";
+        var vulkan_1_3_features = vk.PhysicalDeviceVulkan13Features{ .dynamic_rendering = .true };
         const device = try vki.createDevice(pdev, &.{
+            .p_next = if (options.enable_dynamic_rendering) &vulkan_1_3_features else null,
             .queue_create_info_count = 1,
             .p_queue_create_infos = &[_]vk.DeviceQueueCreateInfo{.{
                 .queue_family_index = qfam,
@@ -93,6 +100,7 @@ pub const Gpu = struct {
             .device = device,
             .vkd = vkd,
             .queue = queue,
+            .dynamic_rendering_enabled = options.enable_dynamic_rendering,
         };
     }
 
@@ -114,6 +122,22 @@ pub const Gpu = struct {
         };
         try chain.init(want);
         return chain;
+    }
+
+    /// The first memory type allowed by `memory_type_bits` (from a resource's
+    /// memory requirements) that has every flag in `required_properties`.
+    pub fn findMemoryTypeIndex(
+        self: *const Gpu,
+        memory_type_bits: u32,
+        required_properties: vk.MemoryPropertyFlags,
+    ) error{NoSuitableMemoryType}!u32 {
+        const memory_properties = self.vki.getPhysicalDeviceMemoryProperties(self.pdev);
+        for (0..memory_properties.memory_type_count) |memory_type_index| {
+            const allowed = memory_type_bits & (@as(u32, 1) << @intCast(memory_type_index)) != 0;
+            const property_flags = memory_properties.memory_types[memory_type_index].property_flags;
+            if (allowed and property_flags.contains(required_properties)) return @intCast(memory_type_index);
+        }
+        return error.NoSuitableMemoryType;
     }
 
     /// Block until the device is idle — call before tearing frame resources down.

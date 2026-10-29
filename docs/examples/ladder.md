@@ -73,7 +73,7 @@ one new *library*. Full ordering + adapter version columns:
 | 7 | **image-viewer** | v0.6.0 (file_drop) | v0.3.0 | drag-drop PNG upload |
 | 8–12 | tetris … typing-game | v0.7.0–v0.8.0 | v0.3.0 | input contexts, replay, gamepads, paths, IME |
 | 13–15 | life, particles, shader-playground | (v0.6.0) | v0.4.0 (shaderc) | runtime shaders + compute |
-| 16 | **hello-cube** | (v0.6.0) | v0.4.0 + depth | 3D smoke — perspective MVP + depth attachment |
+| 16 | **hello-cube** | (v0.6.0) | v0.4.0 + depth | 3D smoke — perspective MVP + depth attachment. Built as [`depth-cube`](depth-cube.md) |
 
 `hello-triangle` appears in both Track A (rung 2+) and here — it is the bridge
 between clear-color and game-style apps.
