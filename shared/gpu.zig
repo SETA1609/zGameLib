@@ -74,7 +74,9 @@ pub const Gpu = struct {
 
         const prio = [_]f32{1.0};
         const sc_ext: [*:0]const u8 = "VK_KHR_swapchain";
+        var vulkan_1_3_features = vk.PhysicalDeviceVulkan13Features{ .dynamic_rendering = .true };
         const device = try vki.createDevice(pdev, &.{
+            .p_next = if (options.enable_dynamic_rendering) &vulkan_1_3_features else null,
             .queue_create_info_count = 1,
             .p_queue_create_infos = &[_]vk.DeviceQueueCreateInfo{.{
                 .queue_family_index = qfam,
@@ -98,8 +100,7 @@ pub const Gpu = struct {
             .device = device,
             .vkd = vkd,
             .queue = queue,
-            // Not implemented yet: the option is accepted but the device never enables it.
-            .dynamic_rendering_enabled = false,
+            .dynamic_rendering_enabled = options.enable_dynamic_rendering,
         };
     }
 
@@ -130,8 +131,13 @@ pub const Gpu = struct {
         memory_type_bits: u32,
         required_properties: vk.MemoryPropertyFlags,
     ) error{NoSuitableMemoryType}!u32 {
-        _ = .{ self, memory_type_bits, required_properties };
-        @panic("not implemented");
+        const memory_properties = self.vki.getPhysicalDeviceMemoryProperties(self.pdev);
+        for (0..memory_properties.memory_type_count) |memory_type_index| {
+            const allowed = memory_type_bits & (@as(u32, 1) << @intCast(memory_type_index)) != 0;
+            const property_flags = memory_properties.memory_types[memory_type_index].property_flags;
+            if (allowed and property_flags.contains(required_properties)) return @intCast(memory_type_index);
+        }
+        return error.NoSuitableMemoryType;
     }
 
     /// Block until the device is idle — call before tearing frame resources down.

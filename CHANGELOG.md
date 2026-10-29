@@ -6,6 +6,18 @@ Changes per issue, newest first. Issues are tracked in [issues.md](issues.md). E
 
 ## Unreleased
 
+### Issue 2 Start the 3D path
+
+Branch `issue-2-start-the-3d-path`. The 3D path sits beside the 2D one; nothing in the 2D API changes.
+
+- `Gpu.Options.enable_dynamic_rendering` (default `false`) turns on Vulkan 1.3 dynamic rendering; `Gpu.dynamic_rendering_enabled` reports it. `Gpu.findMemoryTypeIndex` picks a memory type for a resource.
+- `shared/camera.zig` (`zgame.camera`): `Vector3`, column-major `Matrix4` (multiply, translation, rotation around Y), and `PerspectiveCamera` (view, projection, view-projection) in Vulkan conventions: -Z forward, clip-space Y down, depth 0..1. Pure math, no GPU.
+- `shared/depth.zig` (`zgame.DepthBuffer`): a D32 depth image, memory, and view sized to the swapchain, with `recreate` and a per-frame transition to the attachment layout.
+- `shared/mesh.zig` (`zgame.IndexedMesh`): one vertex buffer and one 16-bit index buffer in host-visible memory, drawn with `recordDraw`; empty vertex or index lists are rejected.
+- `examples/depth-cube`: a rotating, depth-tested cube drawn with `cmdBeginRendering`, a push-constant model-view-projection matrix, and glslc-compiled shaders. `-- --frames N` exits after N frames.
+- Tests: `tests/camera_test.zig` (9 tests) runs under `zig build test`; `tests/gpu_test.zig` gains 6 tests for dynamic rendering, `DepthBuffer`, and `IndexedMesh`.
+- Checked in a Zig 0.17.0 container (lavapipe, Xvfb): `zig build test` 10 passed; test-tdd 15 passed, 3 skipped of 18 (the 2D suites unchanged, 6 new GPU tests pass); `zig build examples`, the check examples, fmt, and the decoupling `nm` gate pass; `depth-cube --frames 60` exits 0 with the Khronos validation layer loaded and 0 validation errors.
+
 ### Issue 4 Design the API before the tests
 
 Branch `issue-4-design-the-api-before-the-tests`.
@@ -20,9 +32,9 @@ Branch `issue-3-run-agents-in-a-dev-container`.
 - `scripts/agent.sh [command...]` (default `bash`): mounts the checkout at its host path, its git directory when `.git` is a file (submodule or worktree), and the named home volume `personal-agent-home` (`AGENT_HOME_VOLUME` overrides it) that keeps the Claude login and git identity.
 - Checked from a submodule checkout: `claude --version` prints 2.1.312; `git status` and `git submodule status` work; `zig build test` passes; files written inside belong to the host user.
 
-### Issue 1 Port to Zig 0.17.0
+## 2026-10-29
 
-Branch `issue-1-port-to-zig-0.17.0`.
+### Issue 1 Port to Zig 0.17.0 (#12)
 
 - Submodules clone over HTTPS (`.gitmodules`), so `--recurse-submodules` works without an SSH key.
 - `libs/zig-cpp-platform-stack-adapter` → `7e6630c` and `libs/zig-cpp-vulkan-stack-adapter` → `912b245`, their Zig 0.17.0 `main`s. `libs/zClip` → zClip's `main`, with its Zig 0.17.0 port (zClip Issue 1, which also brought its animation code and MIT license to `main`) and its devops CLI (zClip Issue 2).

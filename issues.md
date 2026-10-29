@@ -16,7 +16,7 @@ Done when: the `check` and `decoupling` gates pass; `zig build test`, `zig build
 
 ## Issue 2 — Start the 3D path
 
-Status: todo
+Status: review
 Needs: Issue 1
 
 Add a 3D render path beside the 2D one without changing the 2D API: a depth attachment, a perspective camera, and one indexed mesh drawn with dynamic rendering. Engine-neutral: no game content.
