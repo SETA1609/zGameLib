@@ -349,10 +349,12 @@ After the divide, depth is not linear in distance. For a point at distance `d`:
 depth(d) = f / (f − n) · (1 − n / d)
 ```
 
-Half of the 0..1 range is used up between `n` and `2n`. With `near = 0.1`, the
-first 0.2 units in front of the camera take half the depth values, and
-everything beyond shares the rest. That is fine for `depth-cube`
-(`near = 0.1`, `far = 100`). For large outdoor scenes, it causes **z-fighting**:
+At `d = 2n` the depth is `f / (2·(f − n))`, which is just over one half and
+tends to exactly one half when `f` is much larger than `n`. So about half of the
+0..1 range is used up between `n` and `2n`. With `near = 0.1` and `far = 100`, as
+in `depth-cube`, the depth at 0.2 is 0.5005: the 0.1 units just past the near
+plane take half the depth values, and everything from there to 100 shares the
+rest. That is fine for `depth-cube`. For large outdoor scenes, it causes **z-fighting**:
 far surfaces that are close together get the same depth value and flicker.
 
 Two rules of thumb follow. Push the near plane out as far as the game allows,

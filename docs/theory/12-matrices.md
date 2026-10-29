@@ -316,6 +316,33 @@ read left to right. Copying a matrix between the two conventions without
 transposing makes rotations turn the wrong way and puts the translation in the
 wrong place, a classic bug when porting math code.
 
+**Porting from raylib.** raylib's `raymath.h` uses the same math as zGameLib
+(right-handed, column vectors, +Y up, the camera looking down −Z): its
+`MatrixLookAt` and `MatrixRotateY` give the same matrices as `computeViewMatrix`
+and `computeRotationAroundYAxis`. Two things differ:
+
+- **Multiplication order.** raylib's `MatrixMultiply(a, b)` applies `a` first,
+  which is our `multiply(b, a)`. With the section 4 example, raylib's
+  `MatrixMultiply(rotate, move)` and our `multiply(move, rotate)` both send
+  `(1, 0, 0)` to `(5, 0, −1)`. Swap the arguments when porting; raylib's own
+  renderer builds its model-view-projection as
+  `MatrixMultiply(modelview, projection)` for this reason.
+- **Memory layout.** Its `Matrix` struct is stored row by row, while its math
+  is column-major:
+
+  > "Matrix structure is defined as row-major (memory layout) but parameters
+  > naming AND all math operations performed by the library consider the
+  > structure as it was column-major"
+  > — [raylib `raymath.h`](https://github.com/raysan5/raylib/blob/89fa90f9c0806072757f2417b7830f6a10732851/src/raymath.h), conventions
+
+  Before uploading, raylib reorders the floats into column-major order
+  (`MatrixToFloatV`) and passes them to `glUniformMatrix4fv` with no
+  transpose, so the shader sees the same bytes a `Matrix4` already has. Copy
+  raylib *formulas*, not raw `Matrix` structs.
+
+Its projection is OpenGL's (y up, depth −1..1); file 13 explains why ours
+differs.
+
 The source writes matrices one column per inner array, so the rotation from
 section 2 appears transposed on screen:
 
@@ -373,3 +400,7 @@ smooth rotation blending in animation.
   and [*Matrix multiplication*](https://en.wikipedia.org/wiki/Matrix_multiplication),
   quoted from the article source as fetched on 2026-10-29, with wiki markup
   rendered as text. Text © Wikipedia contributors, CC BY-SA 4.0.
+- **raylib** `src/raymath.h`, `src/rlgl.h` (zlib/libpng licence), read at commit
+  `89fa90f9c080` (2026-10-29): `MatrixMultiply`, `MatrixLookAt`,
+  `MatrixRotateY`, `MatrixToFloatV`, and the uniform upload. The order and
+  look-at comparisons were run numerically on that source.
