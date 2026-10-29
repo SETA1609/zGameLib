@@ -87,6 +87,9 @@ Read them in this order — each builds on the last:
 | 08 | [`08-hot-reload.md`](08-hot-reload.md) | hot reload at the foundation level — rebuild primitives, typed hooks, what Tier 1 does (and doesn't) reload |
 | 09 | [`09-hazel-hazelnut-split.md`](09-hazel-hazelnut-split.md) | the Hazel/Hazelnut split — what it means for Tier 1 (keeping zGameLib engine-agnostic) |
 | 10 | [`10-web-backend-strategy.md`](10-web-backend-strategy.md) | WebGPU as the web graphics backend — optional sibling module alongside Vulkan |
+| 11 | [`11-vectors-and-matrices.md`](11-vectors-and-matrices.md) | the 3D path's math: vectors, dot and cross products, homogeneous 4x4 matrices, column-major layout, multiplication order |
+| 12 | [`12-cameras-and-vulkan-clip-space.md`](12-cameras-and-vulkan-clip-space.md) | model, view, projection; Vulkan's clip volume, y-down NDC, and 0..1 depth; how the matrix reaches the shader as a push constant |
+| 13 | [`13-depth-buffers-meshes-and-dynamic-rendering.md`](13-depth-buffers-meshes-and-dynamic-rendering.md) | the depth test, `DepthBuffer`, `IndexedMesh`, memory types, and drawing with dynamic rendering instead of a render pass |
 
 > **Two companion docs already live next to the code.** The framework ships
 > [`shared/gpu.md`](../../shared/gpu.md) and [`shared/frame.md`](../../shared/frame.md)
