@@ -35,6 +35,7 @@ zig build clear-color-2      # rung 2 — same app rebuilt on Gpu/FrameRing help
 zig build hello-triangle     # rung 2+ — pipeline + VMA vertex buffer; compiles shaders via `glslc`
 zig build depth-cube         # 3D path — dynamic rendering + DepthBuffer + IndexedMesh + PerspectiveCamera; `run-depth-cube -- --frames N`
 # animation-demo / audio-demo / asset-demo / app-demo are STUBS (panic / await future libs)
+(cd libs/zig-c-math-stack-adapter && zig build test)   # math adapter unit tests (no display)
 ```
 
 Docker + CI mirrors (run the exact CI gates locally):
@@ -61,7 +62,7 @@ Every issue that adds or changes behaviour lands as separate commits in this ord
 
 ## Architecture
 
-**libs-first / link-the-artifact DAG.** Three sibling libraries under `libs/` (git submodules) each build their own static-library artifact and expose a Zig module: `platform` (zig-cpp-platform-stack-adapter, SDL3 windowing+input), `vulkan_stack` (zig-cpp-vulkan-stack-adapter — vk + volk + VMA + shaderc + per-OS surface creators), and `zclip` (sprite/skeletal animation data). `build.zig`'s `pipeline` step drives them topologically: `build-platform` + `build-vulkan_stack` + `build-zclip` → `build-framework` → install.
+**libs-first / link-the-artifact DAG.** Three sibling libraries under `libs/` (git submodules), plus the in-tree `libs/zig-c-math-stack-adapter` (`math_stack`: vector and matrix math over cglm, a standalone package until it moves to its own repository), each build their own static-library artifact and expose a Zig module: `platform` (zig-cpp-platform-stack-adapter, SDL3 windowing+input), `vulkan_stack` (zig-cpp-vulkan-stack-adapter — vk + volk + VMA + shaderc + per-OS surface creators), and `zclip` (sprite/skeletal animation data). `build.zig`'s `pipeline` step drives them topologically: `build-platform` + `build-vulkan_stack` + `build-zclip` → `build-framework` → install.
 
 **Two consumer modules** (both `b.addModule`, so consumers import at source level):
 - `zgame` (`src/root.zig`) — the full framework. Re-exports the raw building blocks (`zgame.platform`, `.vk`, `.volk`, `.vma`, `.shaderc`, `.surface`, `.swapchain`, `.zclip`) AND links all three lib artifacts, plus framework helpers `zgame.Gpu`, `zgame.FrameRing`, `zgame.transitionImage`, `zgame.animation`, `zgame.App`. **This is what Nexus imports as `zgame`.**

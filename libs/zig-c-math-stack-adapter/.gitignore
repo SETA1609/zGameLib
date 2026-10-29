@@ -1,0 +1,4 @@
+.zig-cache/
+zig-out/
+# The parent repository ignores every build/ directory; this one holds build scripts.
+!/build/

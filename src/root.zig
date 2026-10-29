@@ -44,6 +44,9 @@ pub const swapchain = @import("swapchain");
 /// re-exported through the framework (raw-first tier; drive it directly, or
 /// use the `animation` abstraction below).
 pub const zclip = @import("zclip");
+/// Vector and matrix math over cglm (`libs/zig-c-math-stack-adapter`):
+/// `Vector3`, `Vector4`, `Matrix4`, Vulkan-convention projections.
+pub const math_stack = @import("math_stack");
 
 // --- Render / animation helpers (the boilerplate lifted out of the examples) -
 // Same tier as surface/swapchain — reusable policy the libs leave to the
