@@ -12,13 +12,23 @@ vertex must end up on screen. Each of those changes is a **transform**, and
 matrices are how linear algebra writes transforms down so that a computer, or a
 GPU, can apply and combine them cheaply.
 
-> **How to read the examples.** Every number here was computed, and the claims
-> about `Matrix4` are checked by
-> [`tests/camera_test.zig`](../../tests/camera_test.zig) under `zig build test`.
+**How to read the examples.** Every number here was computed, and the claims
+about `Matrix4` are checked by
+[`tests/camera_test.zig`](../../tests/camera_test.zig) under `zig build test`.
+
+## What, why, and what for
+
+- **What:** 4x4 matrices, grids of numbers that transform points and directions, and the operations on them: multiply (combine), transpose, and invert.
+- **Why:** one matrix can hold any mix of scale, rotation, translation, and perspective, so the GPU transforms every vertex with a single matrix-times-vector, however many steps were combined.
+- **For what:** `Matrix4` in `camera.zig`: the model, view, and projection matrices that `depth-cube` combines and pushes to its vertex shader every frame.
 
 ---
 
 ## 1. A matrix is a transform, and its columns say where the axes go
+
+- **What:** a grid of numbers whose columns say where the X, Y, and Z axes land.
+- **Why:** it gives a way to build a transform (decide where the axes go) and to read one (look at its columns).
+- **For what:** reading and writing every matrix in `camera.zig`, for example the rotation's columns.
 
 A 3x3 matrix is a grid of numbers that turns one vector into another:
 
@@ -72,6 +82,10 @@ leaves a matrix unchanged"). `Matrix4.identity` is a constant.
 
 ## 2. Rotation around the Y axis
 
+- **What:** the matrix that turns everything around the vertical axis by an angle.
+- **Why:** turning is the most common change in a game, and a rotation is undone by simply transposing it.
+- **For what:** `depth-cube`'s spinning cube, and the rotation part of the view matrix.
+
 ```zig
 /// Counter-clockwise when looking down the Y axis from above: +X turns towards -Z.
 pub fn computeRotationAroundYAxis(angle_radians: f32) Matrix4
@@ -101,6 +115,10 @@ turn. Section 6 uses this to build the view matrix.
 ---
 
 ## 3. Why 4x4: moving things needs one more coordinate
+
+- **What:** one extra coordinate, `w`: 1 for points, 0 for directions.
+- **Why:** a 3x3 matrix can never move anything, and only `w` lets one matrix also translate and set up perspective.
+- **For what:** `computeTranslation`, `transformPoint`, and the projection's perspective divide (file 13).
 
 There is a transform no 3x3 matrix can do: **translation**, plain moving. A 3x3
 matrix times `(0, 0, 0)` is always `(0, 0, 0)`, so it can never move the origin.
@@ -176,6 +194,10 @@ builds that matrix.
 
 ## 4. Multiplying matrices chains transforms, right to left
 
+- **What:** combining two transforms into one matrix; the right-hand one happens first.
+- **Why:** order changes the result, and one combined matrix is far cheaper per vertex than many.
+- **For what:** projection · view · model in `depth-cube`, computed once per frame.
+
 > "Matrix multiplication was first described by the French mathematician
 > Jacques Philippe Marie Binet in 1812, to represent the composition of linear
 > maps that are represented by matrices."
@@ -229,6 +251,10 @@ there.
 
 ## 5. The inverse: undoing a transform
 
+- **What:** the transform that undoes another.
+- **Why:** a camera is drawn by moving the whole world the opposite way, which is the inverse of the camera's placement.
+- **For what:** `computeViewMatrix`.
+
 The **inverse** of `M`, written M⁻¹, undoes it: `M⁻¹ · M = I`. Moving 5 m right
 is undone by moving 5 m left; a rotation is undone by its transpose (section 2).
 The inverse of a chain reverses the order: `(A · B)⁻¹ = B⁻¹ · A⁻¹`. To undo
@@ -258,6 +284,10 @@ negative Z axis").
 ---
 
 ## 6. Storing a matrix: column-major, `columns[column][row]`
+
+- **What:** how the 16 numbers sit in memory: one column after another.
+- **Why:** the GPU must read the bytes the way the CPU wrote them, or every transform is silently transposed.
+- **For what:** `Matrix4`'s `extern struct` layout, copied as a push constant into GLSL's `mat4`.
 
 ```zig
 pub const Matrix4 = extern struct {

@@ -21,9 +21,19 @@ The GPU tests are in [`tests/gpu_test.zig`](../../tests/gpu_test.zig) and run
 under `zig build test-tdd` (they need a display and a Vulkan driver; lavapipe
 under Xvfb works).
 
+## What, why, and what for
+
+- **What:** the GPU side of the 3D path: the depth buffer, indexed meshes, memory-type selection, and dynamic rendering.
+- **Why:** drawing in 3D needs per-pixel visibility, compact geometry, and a way to tell the GPU what to draw into; these are the smallest pieces that provide them.
+- **For what:** `DepthBuffer`, `IndexedMesh`, `Gpu.findMemoryTypeIndex`, and `Gpu.Options.enable_dynamic_rendering`, all used together by `depth-cube`.
+
 ---
 
 ## 1. Why a depth buffer?
+
+- **What:** an image holding, for every pixel, the depth of the nearest surface drawn so far, and the test that compares each new fragment against it.
+- **Why:** triangles cannot be sorted front to back correctly in general, so visibility has to be decided per pixel.
+- **For what:** `DepthBuffer` and the pipeline's depth test in `depth-cube`.
 
 Draw a cube's six faces in any order and, without help, whichever face is drawn
 *last* covers the others, even if it is at the back. The 2D path never meets
@@ -124,27 +134,32 @@ It transitions from `UNDEFINED`, which tells the driver the old contents may be
 discarded. That is correct because the depth is cleared at the start of every
 frame anyway, and it saves the GPU from preserving data nobody reads.
 
-> **Known limitation: one depth image shared by frames in flight.** The barrier's
-> source stage is `TOP_OF_PIPE` with no source access. The spec says what that
-> means as a source:
->
-> > "`VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT` is equivalent to
-> > `VK_PIPELINE_STAGE_ALL_COMMANDS_BIT` with `VkAccessFlags` set to `0` when
-> > specified in the second synchronization scope, but specifies no stage of
-> > execution when specified in the first scope."
-> > — [Vulkan spec, *Pipeline Stages*](https://registry.khronos.org/vulkan/specs/latest/html/vkspec.html#synchronization-pipeline-stages)
->
-> So the barrier does not wait for the *previous* frame's depth writes.
-> `depth-cube` runs 2 frames in flight with one depth image, so frame N+1's clear
-> may race frame N's depth tests on the GPU: a write-after-write hazard. Standard
-> validation does not report it, and lavapipe happens to run frames in order;
-> the synchronization validation layer would flag it. The fix is a source stage
-> of `EARLY_FRAGMENT_TESTS | LATE_FRAGMENT_TESTS` with source access
-> `DEPTH_STENCIL_ATTACHMENT_WRITE`, or one depth image per frame in flight.
+### Known limitation: one depth image shared by frames in flight
+
+The barrier's source stage is `TOP_OF_PIPE` with no source access. The spec says
+what that means as a source:
+
+> "`VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT` is equivalent to
+> `VK_PIPELINE_STAGE_ALL_COMMANDS_BIT` with `VkAccessFlags` set to `0` when
+> specified in the second synchronization scope, but specifies no stage of
+> execution when specified in the first scope."
+> — [Vulkan spec, *Pipeline Stages*](https://registry.khronos.org/vulkan/specs/latest/html/vkspec.html#synchronization-pipeline-stages)
+
+So the barrier does not wait for the *previous* frame's depth writes.
+`depth-cube` runs 2 frames in flight with one depth image, so frame N+1's clear
+may race frame N's depth tests on the GPU: a write-after-write hazard. Standard
+validation does not report it, and lavapipe happens to run frames in order; the
+synchronization validation layer would flag it. The fix is a source stage of
+`EARLY_FRAGMENT_TESTS | LATE_FRAGMENT_TESTS` with source access
+`DEPTH_STENCIL_ATTACHMENT_WRITE`, or one depth image per frame in flight.
 
 ---
 
 ## 2. Indexed meshes: sharing vertices
+
+- **What:** unique vertices stored once in one buffer, and triangles as small indices into it.
+- **Why:** corners shared by several triangles are stored, and often shaded, once: the cube takes 264 bytes instead of 864.
+- **For what:** `IndexedMesh`, with memory picked by `findMemoryTypeIndex`.
 
 A cube has 8 corners but 12 triangles (2 per face × 6 faces), so 36 triangle
 corners. Without indices, every triangle lists its three vertices in full, and
@@ -224,6 +239,10 @@ helpers small and the choice visible.
 ---
 
 ## 3. Dynamic rendering: drawing without a render pass
+
+- **What:** naming the colour and depth attachments in the command buffer with `cmdBeginRendering`, instead of creating render pass and framebuffer objects.
+- **Why:** fewer objects to create and recreate, and pipelines that are not tied to a render pass.
+- **For what:** the `enable_dynamic_rendering` option of `Gpu` and `depth-cube`'s frame recording.
 
 Vulkan requires draws to happen inside a *render pass instance*:
 
@@ -312,6 +331,10 @@ the colour and the depth work start at those stages.
 ---
 
 ## 4. Where the 3D path goes next
+
+- **What:** the work that is not built yet.
+- **Why:** so missing pieces and known limitations are visible instead of surprises.
+- **For what:** choosing the next issues.
 
 None of these are built yet; each would be its own issue.
 

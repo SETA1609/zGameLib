@@ -13,14 +13,24 @@ vectors and the maps between them that keep straight lines straight. A game uses
 a small, very practical slice of it: vectors (this file), matrices (file 12),
 and one projective trick for perspective (files 12 and 13).
 
-> **How to read the examples.** Every number in this file was computed, not
-> worked out by hand, and the claims about `camera.zig` are checked by
-> [`tests/camera_test.zig`](../../tests/camera_test.zig) (`zig build test`,
-> no GPU needed). When this file and a test disagree, the test is right.
+**How to read the examples.** Every number in this file was computed, not
+worked out by hand, and the claims about `camera.zig` are checked by
+[`tests/camera_test.zig`](../../tests/camera_test.zig) (`zig build test`,
+no GPU needed). When this file and a test disagree, the test is right.
+
+## What, why, and what for
+
+- **What:** vectors, three numbers that describe a position or a direction, and the operations on them: add, subtract, scale, length, normalize, dot product, cross product.
+- **Why:** every position, direction, and movement in a 3D game is a vector. The camera needs them to know where it is and where it looks, and questions like "is that in front of me?" become one cheap formula instead of trigonometry.
+- **For what:** building the camera's axes in `camera.zig` today; movement, lighting, visibility checks, and physics later.
 
 ---
 
 ## 1. What a vector is
+
+- **What:** three numbers, read either as an arrow or as coordinates along agreed axes.
+- **Why:** the numbers only mean something once the axes and their handedness are fixed, and points and directions must not be mixed.
+- **For what:** every `Vector3` in zGameLib: the camera's position, target, and up direction, and the mesh vertices.
 
 A vector in 3D is three numbers, one per axis:
 
@@ -80,6 +90,10 @@ coordinate, `w`, makes matrices respect it: points get `w = 1`, directions
 
 ## 2. Adding, subtracting, and scaling
 
+- **What:** component-by-component arithmetic on vectors.
+- **Why:** moving is adding, the arrow between two points is a subtraction, and speed times time is scaling.
+- **For what:** `target − position` in the camera; movement as `position + velocity · time step` later.
+
 Component by component:
 
 ```
@@ -105,6 +119,10 @@ them, in the same API-then-tests order as everything else.
 
 ## 3. Length and distance
 
+- **What:** Pythagoras in 3D; the distance between two points is the length of their difference.
+- **Why:** games constantly ask "how far?".
+- **For what:** range and trigger checks; `normalize` divides by the length.
+
 The length (also *magnitude* or *norm*) is Pythagoras in 3D:
 
 ```
@@ -123,6 +141,10 @@ without a square root. Section 5 explains why `a · a` is the squared length.
 ---
 
 ## 4. Unit vectors and `normalize`
+
+- **What:** the same direction with length 1.
+- **Why:** a direction used as an axis or for an angle must have length 1, or every result is scaled wrongly.
+- **For what:** the camera's forward and right axes.
 
 A **unit vector** has length 1. It is a pure direction, like a compass heading
 with the distance thrown away. Dividing a vector by its length gives the unit
@@ -147,6 +169,10 @@ section 7).
 ---
 
 ## 5. The dot product: how much two directions agree
+
+- **What:** one number, the sum of the products of matching components, equal to |a| · |b| · cos(angle).
+- **Why:** it turns "what angle?" and "how far along this axis?" into a few multiplications, with no trigonometry.
+- **For what:** the view matrix measuring points along the camera's axes; facing and field-of-view checks, lighting (`N · L`), and squared lengths.
 
 > "Algebraically, the dot product is the sum of the products of the
 > corresponding entries of the two sequences of numbers. Geometrically, the
@@ -209,6 +235,10 @@ to six decimal places.
 ---
 
 ## 6. The cross product: the direction at right angles to both
+
+- **What:** a vector perpendicular to both inputs, oriented by the right-hand rule, as long as the parallelogram they span is large.
+- **Why:** it is the cheap way to get a third axis from two, or the direction straight out of a surface.
+- **For what:** the camera's right and up axes; triangle normals and winding order.
 
 > "The cross product **a** × **b** is defined as a vector **c** that is
 > perpendicular (orthogonal) to both **a** and **b**, with a direction given by
@@ -274,6 +304,10 @@ zero, and the view matrix collapses (file 13, section 7).
 ---
 
 ## 7. Floats are not real numbers
+
+- **What:** 32-bit floats with about 7 significant digits, instead of the exact real numbers of linear algebra on paper.
+- **Why:** math that is exact on paper is approximate in a computer, and the error grows with distance and with repeated operations.
+- **For what:** tolerances in the tests, rebuilding the camera axes every call, and re-centring large worlds.
 
 Linear algebra is done on paper with exact real numbers; zGameLib uses 32-bit
 floats (`f32`), which carry about 7 significant decimal digits. Three practical

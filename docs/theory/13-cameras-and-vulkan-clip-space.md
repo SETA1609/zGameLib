@@ -30,9 +30,19 @@ Read right to left (file 12, section 4): rotate the cube (model), then view, the
 project. `computeViewProjectionMatrix` is `projection · view` (test: "the
 view-projection matrix is the projection times the view").
 
+## What, why, and what for
+
+- **What:** the chain that takes a vertex from its mesh to a pixel: the model, view, and projection matrices, then Vulkan's clipping, perspective divide, and viewport transform.
+- **Why:** Vulkan fixes clip space with its own conventions (y pointing down, depth 0..1), and the projection must match them exactly, or the picture comes out upside down or clipped away.
+- **For what:** `PerspectiveCamera` in `camera.zig`, the model-view-projection push constant in `depth-cube`, and the depth values the depth buffer compares (file 14).
+
 ---
 
 ## 1. Model: object space → world space
+
+- **What:** the matrix that places one object in the world.
+- **Why:** meshes are made around their own origin, not where they stand in the scene.
+- **For what:** `depth-cube`'s per-frame rotation; one model matrix per object in a scene.
 
 A mesh is authored around its own origin: the cube's corners are at ±1. The
 **model matrix** places that object in the world: rotate it, scale it, move it.
@@ -43,6 +53,10 @@ projection are shared.
 ---
 
 ## 2. View: world space → view space
+
+- **What:** the matrix that re-expresses the whole world in the camera's own axes.
+- **Why:** the GPU has no camera; it draws as if looking from the origin down −Z.
+- **For what:** `computeViewMatrix`.
 
 The GPU has no concept of a camera. "Moving the camera right" is done by moving
 the *whole world* left. The **view matrix** is that move: it re-expresses every
@@ -104,6 +118,10 @@ transposed there: `.{ right.x, up.x, -forward.x, 0 }` is the first column.
 
 ## 3. Projection: view space → clip space
 
+- **What:** the matrix that squeezes the visible frustum into a box and puts each point's distance into `w`.
+- **Why:** perspective, far things looking smaller, needs a divide by distance, and only the GPU's divide by `w` can do it.
+- **For what:** `computeProjectionMatrix`.
+
 The projection does two jobs: it squeezes the visible region, a truncated
 pyramid called the **view frustum**, into a box, and it prepares the
 **perspective divide** that makes far things small.
@@ -160,6 +178,10 @@ Row by row:
 ---
 
 ## 4. The Vulkan conventions, and why they shape the matrix
+
+- **What:** Vulkan's clip volume, the ranges of normalized device coordinates, the framebuffer's orientation, and the viewport transform.
+- **Why:** the spec fixes them, and they differ from OpenGL's, so formulas copied from OpenGL tutorials break.
+- **For what:** the negated y and the 0..1 depth formula in the projection matrix.
 
 Clip space and the coordinates after the divide are defined by Vulkan, not by
 us:
@@ -250,6 +272,10 @@ and `max_depth = 1`, so the depth written to the depth buffer is exactly NDC z.
 
 ## 5. How the matrix reaches the shader
 
+- **What:** sending the 64-byte model-view-projection matrix as a push constant and multiplying in the vertex shader.
+- **Why:** a push constant is the cheapest way to send small data that changes every frame: no buffer to allocate or synchronize.
+- **For what:** `depth-cube`'s pipeline layout, its `cmdPushConstants` call, and `cube.vert.glsl`.
+
 The MVP matrix changes every frame and is only 64 bytes, so `depth-cube` sends it
 as a **push constant**: a small block of data recorded straight into the command
 buffer, with no buffer to allocate or synchronize. How much fits is a device
@@ -313,6 +339,10 @@ they call `transformPoint`, divide by `w`, and compare with what Vulkan will do.
 
 ## 6. Depth precision: why the near plane matters
 
+- **What:** how depth values are spread between the near and far planes.
+- **Why:** they are not spread evenly, so a near plane that is too close wastes precision and makes distant surfaces flicker (z-fighting).
+- **For what:** choosing `near_plane_distance` and `far_plane_distance`; reverse-Z later.
+
 After the divide, depth is not linear in distance. For a point at distance `d`:
 
 ```
@@ -334,6 +364,10 @@ reverse-Z yet; it would be a new projection function, not a change to this one.
 ---
 
 ## 7. Limits of this camera
+
+- **What:** the cases this camera cannot handle.
+- **Why:** knowing them in advance prevents bugs that only show up as a broken or empty frame.
+- **For what:** deciding when a new camera type is needed.
 
 - **Looking straight up or down.** If `target − position` is parallel to
   `up_direction`, the cross product is zero, `normalize` keeps it zero, and the

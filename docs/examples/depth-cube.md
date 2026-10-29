@@ -9,6 +9,12 @@
 > [13](../theory/13-cameras-and-vulkan-clip-space.md),
 > [14](../theory/14-depth-buffers-meshes-and-dynamic-rendering.md).
 
+## What, why, and what for
+
+- **What:** the smallest complete 3D program on zGameLib: a spinning, depth-tested cube drawn with dynamic rendering.
+- **Why:** it is the first app that uses every 3D building block together, so it proves they fit and shows the order to call them in.
+- **For what:** a template to copy when starting 3D work, a smoke test (`--frames N` under Xvfb with the validation layer), and the running example in theory files 11–14.
+
 ## What it does
 
 Opens an 800x600 window and draws a cube with a different colour at each corner,
@@ -77,7 +83,7 @@ the CPU.
 
 The depth buffer is one image shared by both frames in flight, and its per-frame
 barrier does not wait for the previous frame's depth writes. See
-[file 14, section 1](../theory/14-depth-buffers-meshes-and-dynamic-rendering.md#1-why-a-depth-buffer).
+[file 14, "Known limitation"](../theory/14-depth-buffers-meshes-and-dynamic-rendering.md#known-limitation-one-depth-image-shared-by-frames-in-flight).
 Standard validation does not report it; the synchronization validation layer
 would.
 
