@@ -4,7 +4,7 @@ This repo demonstrates the **pay-for-what-you-use** architecture: each example
 imports only the sibling libraries it needs. The modular ladder lets you start
 minimal and add capabilities one at a time.
 
-**Requires Zig 0.16+** (a display server + a Vulkan loader for the windowed /
+**Requires Zig 0.17.0** (a display server + a Vulkan loader for the windowed /
 integration bits).
 
 ## 1. Clone with submodules

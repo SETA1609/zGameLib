@@ -58,13 +58,13 @@ pub fn main() !void {
         // `null` means the swapchain was just recreated — skip this iteration.
         const f = (try frames.begin(&sc, extentOf(win))) orelse continue;
 
-        zgame.transitionImage(gpu.vkd, f.cmd, f.image, .undefined, .transfer_dst_optimal, .{}, .{ .transfer_write_bit = true }, .{ .top_of_pipe_bit = true }, .{ .transfer_bit = true });
+        zgame.transitionImage(gpu.vkd, f.cmd, f.image, .undefined, .transfer_dst_optimal, .{}, .{ .transfer_write = true }, .{ .top_of_pipe = true }, .{ .transfer = true });
         const second = platform.now() / std.time.ns_per_s; // now() is nanoseconds
         const color = vk.ClearColorValue{ .float_32 = palette[second % palette.len] };
         gpu.vkd.cmdClearColorImage(f.cmd, f.image, .transfer_dst_optimal, &color, &.{zgame.swapchain.colorRange()});
-        zgame.transitionImage(gpu.vkd, f.cmd, f.image, .transfer_dst_optimal, .present_src_khr, .{ .transfer_write_bit = true }, .{}, .{ .transfer_bit = true }, .{ .bottom_of_pipe_bit = true });
+        zgame.transitionImage(gpu.vkd, f.cmd, f.image, .transfer_dst_optimal, .present_src_khr, .{ .transfer_write = true }, .{}, .{ .transfer = true }, .{ .bottom_of_pipe = true });
 
-        try frames.end(&sc, f, .{ .transfer_bit = true });
+        try frames.end(&sc, f, .{ .transfer = true });
     }
     gpu.waitIdle();
 }

@@ -81,7 +81,7 @@ pub fn main() !void {
     // ---- per-frame command buffers + sync ----
     const pool = try vkd.createCommandPool(device, &.{
         .queue_family_index = qfam,
-        .flags = .{ .reset_command_buffer_bit = true },
+        .flags = .{ .reset_command_buffer = true },
     }, null);
     defer vkd.destroyCommandPool(device, pool, null);
     var cmds: [max_frames]vk.CommandBuffer = undefined;
@@ -97,7 +97,7 @@ pub fn main() !void {
     for (0..max_frames) |i| {
         img_avail[i] = try vkd.createSemaphore(device, &.{}, null);
         done[i] = try vkd.createSemaphore(device, &.{}, null);
-        in_flight[i] = try vkd.createFence(device, &.{ .flags = .{ .signaled_bit = true } }, null);
+        in_flight[i] = try vkd.createFence(device, &.{ .flags = .{ .signaled = true } }, null);
     }
     defer for (0..max_frames) |i| {
         vkd.destroySemaphore(device, img_avail[i], null);
@@ -125,7 +125,7 @@ pub fn main() !void {
 
         _ = try vkd.waitForFences(device, &.{in_flight[frame]}, .true, std.math.maxInt(u64));
 
-        const acq = vkd.acquireNextImageKHR(device, sc.handle, std.math.maxInt(u64), img_avail[frame], .null_handle) catch |err| switch (err) {
+        const acq = vkd.acquireNextImageKHR(device, sc.handle, std.math.maxInt(u64), img_avail[frame], .null) catch |err| switch (err) {
             error.OutOfDateKHR => {
                 try sc.recreate(extentOf(win));
                 continue;
@@ -140,15 +140,15 @@ pub fn main() !void {
         try vkd.resetCommandBuffer(cmd, .{});
         try vkd.beginCommandBuffer(cmd, &.{});
         const image = sc.images[acq.image_index];
-        barrier(vkd, cmd, image, .undefined, .transfer_dst_optimal, .{}, .{ .transfer_write_bit = true }, .{ .top_of_pipe_bit = true }, .{ .transfer_bit = true });
+        barrier(vkd, cmd, image, .undefined, .transfer_dst_optimal, .{}, .{ .transfer_write = true }, .{ .top_of_pipe = true }, .{ .transfer = true });
         const second = platform.now() / std.time.ns_per_s; // now() is nanoseconds
         const color = vk.ClearColorValue{ .float_32 = palette[second % palette.len] };
         const range = sc_mod.colorRange();
         vkd.cmdClearColorImage(cmd, image, .transfer_dst_optimal, &color, &.{range});
-        barrier(vkd, cmd, image, .transfer_dst_optimal, .present_src_khr, .{ .transfer_write_bit = true }, .{}, .{ .transfer_bit = true }, .{ .bottom_of_pipe_bit = true });
+        barrier(vkd, cmd, image, .transfer_dst_optimal, .present_src_khr, .{ .transfer_write = true }, .{}, .{ .transfer = true }, .{ .bottom_of_pipe = true });
         try vkd.endCommandBuffer(cmd);
 
-        const wait_stage = vk.PipelineStageFlags{ .transfer_bit = true };
+        const wait_stage = vk.PipelineStageFlags{ .transfer = true };
         try vkd.queueSubmit(queue, &.{.{
             .wait_semaphore_count = 1,
             .p_wait_semaphores = @ptrCast(&img_avail[frame]),

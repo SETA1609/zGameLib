@@ -64,10 +64,10 @@ test "gpu: init brings up instance + surface + device + present queue" {
     try gate(done.gpu_bringup);
     var h = try Harness.init();
     defer h.deinit();
-    try std.testing.expect(@intFromEnum(h.gpu.instance) != 0);
-    try std.testing.expect(h.gpu.surface != .null_handle);
-    try std.testing.expect(@intFromEnum(h.gpu.device) != 0);
-    try std.testing.expect(@intFromEnum(h.gpu.queue) != 0);
+    try std.testing.expect(@intFromPtr(h.gpu.instance) != 0);
+    try std.testing.expect(h.gpu.surface != .null);
+    try std.testing.expect(@intFromPtr(h.gpu.device) != 0);
+    try std.testing.expect(@intFromPtr(h.gpu.queue) != 0);
 }
 
 // WHEN asking the Gpu for a swapchain sized to the window · GIVEN a brought-up Gpu · THEN the swapchain handle is non-null and it owns at least one image.
@@ -77,7 +77,7 @@ test "gpu: createSwapchain yields a non-null swapchain with images" {
     defer h.deinit();
     var sc = try h.gpu.createSwapchain(extentOf(h.win));
     defer sc.deinit();
-    try std.testing.expect(sc.handle != .null_handle);
+    try std.testing.expect(sc.handle != .null);
     try std.testing.expect(sc.count > 0);
 }
 
@@ -88,7 +88,7 @@ test "frame ring: init owns a command pool and starts at index 0" {
     defer h.deinit();
     var frames = try zgame.FrameRing(2).init(h.gpu);
     defer frames.deinit();
-    try std.testing.expect(frames.pool != .null_handle);
+    try std.testing.expect(frames.pool != .null);
     try std.testing.expectEqual(@as(u32, 0), frames.index);
 }
 
@@ -108,12 +108,12 @@ test "frame ring: begin/record/end completes frames and cycles the index" {
     while (completed < 4 and tries < 16) : (tries += 1) {
         const f = (try frames.begin(&sc, extentOf(h.win))) orelse continue;
 
-        zgame.transitionImage(vkd, f.cmd, f.image, .undefined, .transfer_dst_optimal, .{}, .{ .transfer_write_bit = true }, .{ .top_of_pipe_bit = true }, .{ .transfer_bit = true });
+        zgame.transitionImage(vkd, f.cmd, f.image, .undefined, .transfer_dst_optimal, .{}, .{ .transfer_write = true }, .{ .top_of_pipe = true }, .{ .transfer = true });
         const color = vk.ClearColorValue{ .float_32 = .{ 0.1, 0.2, 0.3, 1.0 } };
         vkd.cmdClearColorImage(f.cmd, f.image, .transfer_dst_optimal, &color, &.{zgame.swapchain.colorRange()});
-        zgame.transitionImage(vkd, f.cmd, f.image, .transfer_dst_optimal, .present_src_khr, .{ .transfer_write_bit = true }, .{}, .{ .transfer_bit = true }, .{ .bottom_of_pipe_bit = true });
+        zgame.transitionImage(vkd, f.cmd, f.image, .transfer_dst_optimal, .present_src_khr, .{ .transfer_write = true }, .{}, .{ .transfer = true }, .{ .bottom_of_pipe = true });
 
-        try frames.end(&sc, f, .{ .transfer_bit = true });
+        try frames.end(&sc, f, .{ .transfer = true });
         completed += 1;
     }
     h.gpu.waitIdle();

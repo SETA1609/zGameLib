@@ -9,7 +9,7 @@ zig build test-tdd     # behavioral suite (needs display + Vulkan/GL)
 zig build examples     # build all examples (opt-in)
 ```
 
-Requires Zig **0.16.0**.
+Requires Zig **0.17.0**.
 
 ## Architecture decisions
 

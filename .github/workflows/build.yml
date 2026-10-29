@@ -48,7 +48,7 @@ jobs:
       - name: Install Zig
         uses: mlugg/setup-zig@v2
         with:
-          version: 0.16.0
+          version: 0.17.0
           use-cache: true
       - run: zig version
       # fmt + build both rungs (event-logger + clear-color). No GPU/display
@@ -73,7 +73,7 @@ jobs:
       - name: Install Zig
         uses: mlugg/setup-zig@v2
         with:
-          version: 0.16.0
+          version: 0.17.0
           use-cache: true
       - name: Unit analysis
         run: zig build test
@@ -90,7 +90,7 @@ jobs:
       - name: Install Zig
         uses: mlugg/setup-zig@v2
         with:
-          version: 0.16.0
+          version: 0.17.0
           use-cache: true
       - run: python scripts/ci.py decoupling
 
@@ -108,10 +108,12 @@ jobs:
       - name: Install Zig
         uses: mlugg/setup-zig@v2
         with:
-          version: 0.16.0
+          version: 0.17.0
           use-cache: true
       - name: Install display deps (xvfb + Mesa software Vulkan)
         run: python scripts/install_display_deps.py
+      - name: Install the system shaderc library (-Dshaderc)
+        run: sudo apt-get update && sudo apt-get install -y libshaderc-dev
       - name: Vulkan integration (lavapipe) — informational
         continue-on-error: true
         run: python scripts/ci.py integration

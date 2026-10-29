@@ -52,7 +52,7 @@ pub fn FrameRing(comptime max_frames: u32) type {
 
             const pool = try vkd.createCommandPool(device, &.{
                 .queue_family_index = gpu.qfam,
-                .flags = .{ .reset_command_buffer_bit = true },
+                .flags = .{ .reset_command_buffer = true },
             }, null);
             errdefer vkd.destroyCommandPool(device, pool, null);
 
@@ -70,7 +70,7 @@ pub fn FrameRing(comptime max_frames: u32) type {
                 img_avail[i] = try vkd.createSemaphore(device, &.{}, null);
                 done[i] = try vkd.createSemaphore(device, &.{}, null);
                 // Start signalled so the first wait on each frame returns immediately.
-                in_flight[i] = try vkd.createFence(device, &.{ .flags = .{ .signaled_bit = true } }, null);
+                in_flight[i] = try vkd.createFence(device, &.{ .flags = .{ .signaled = true } }, null);
             }
 
             return .{
@@ -104,7 +104,7 @@ pub fn FrameRing(comptime max_frames: u32) type {
 
             _ = try self.vkd.waitForFences(self.device, &.{self.in_flight[i]}, .true, std.math.maxInt(u64));
 
-            const acq = self.vkd.acquireNextImageKHR(self.device, chain.handle, std.math.maxInt(u64), self.img_avail[i], .null_handle) catch |err| switch (err) {
+            const acq = self.vkd.acquireNextImageKHR(self.device, chain.handle, std.math.maxInt(u64), self.img_avail[i], .null) catch |err| switch (err) {
                 error.OutOfDateKHR => {
                     try chain.recreate(want);
                     return null;

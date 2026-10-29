@@ -17,7 +17,7 @@ pub const Swapchain = struct {
     device: vk.Device,
     surface: vk.SurfaceKHR,
 
-    handle: vk.SwapchainKHR = .null_handle,
+    handle: vk.SwapchainKHR = .null,
     format: vk.SurfaceFormatKHR = undefined,
     extent: vk.Extent2D = undefined,
     images: [max_images]vk.Image = undefined,
@@ -25,7 +25,7 @@ pub const Swapchain = struct {
     count: u32 = 0,
 
     pub fn init(self: *Swapchain, want: vk.Extent2D) !void {
-        try self.build(want, .null_handle);
+        try self.build(want, .null);
     }
 
     /// Resize / out-of-date handling: rebuild, handing the old one over so the
@@ -35,7 +35,7 @@ pub const Swapchain = struct {
         const old = self.handle;
         self.destroyViews();
         try self.build(want, old);
-        if (old != .null_handle) self.vkd.destroySwapchainKHR(self.device, old, null);
+        if (old != .null) self.vkd.destroySwapchainKHR(self.device, old, null);
     }
 
     fn build(self: *Swapchain, want: vk.Extent2D, old: vk.SwapchainKHR) !void {
@@ -55,10 +55,10 @@ pub const Swapchain = struct {
             .image_extent = self.extent,
             .image_array_layers = 1,
             // TRANSFER_DST so we can vkCmdClearColorImage straight into it.
-            .image_usage = .{ .color_attachment_bit = true, .transfer_dst_bit = true },
+            .image_usage = .{ .color_attachment = true, .transfer_dst = true },
             .image_sharing_mode = .exclusive,
             .pre_transform = caps.current_transform,
-            .composite_alpha = .{ .opaque_bit_khr = true },
+            .composite_alpha = .{ .opaque_khr = true },
             .present_mode = mode,
             .clipped = .true,
             .old_swapchain = old,
@@ -86,7 +86,7 @@ pub const Swapchain = struct {
 
     pub fn deinit(self: *Swapchain) void {
         self.destroyViews();
-        if (self.handle != .null_handle) self.vkd.destroySwapchainKHR(self.device, self.handle, null);
+        if (self.handle != .null) self.vkd.destroySwapchainKHR(self.device, self.handle, null);
     }
 };
 
@@ -118,5 +118,5 @@ fn chooseExtent(caps: vk.SurfaceCapabilitiesKHR, want: vk.Extent2D) vk.Extent2D 
 }
 
 pub fn colorRange() vk.ImageSubresourceRange {
-    return .{ .aspect_mask = .{ .color_bit = true }, .base_mip_level = 0, .level_count = 1, .base_array_layer = 0, .layer_count = 1 };
+    return .{ .aspect_mask = .{ .color = true }, .base_mip_level = 0, .level_count = 1, .base_array_layer = 0, .layer_count = 1 };
 }
