@@ -10,6 +10,8 @@
 //!
 //! Raw-first: `cglm` exposes the C declarations the wrappers use.
 
+const std = @import("std");
+
 pub const cglm = @import("cglm.zig");
 
 /// Errors the fallible wrappers return. cglm itself never reports failure: given
@@ -73,6 +75,10 @@ pub const Vector3 = extern struct {
 
     pub fn computeLength(vector: Vector3) f32 {
         return cglm.glmc_vec3_norm(&vector.toArray());
+    }
+
+    fn isFinite(vector: Vector3) bool {
+        return std.math.isFinite(vector.x) and std.math.isFinite(vector.y) and std.math.isFinite(vector.z);
     }
 
     fn toArray(vector: Vector3) cglm.vec3 {
@@ -146,8 +152,17 @@ pub const Matrix4 = extern struct {
     /// The matrix that undoes this one. A singular matrix has no inverse:
     /// `error.SingularMatrix`.
     pub fn computeInverse(matrix: Matrix4) Error!Matrix4 {
-        _ = matrix;
-        @panic("not implemented");
+        const determinant = cglm.glmc_mat4_det(&matrix.columns);
+        if (determinant == 0 or !std.math.isFinite(determinant)) return error.SingularMatrix;
+        var inverse: Matrix4 = undefined;
+        cglm.glmc_mat4_inv(&matrix.columns, &inverse.columns);
+        // A determinant close to zero can still overflow the elements.
+        for (inverse.columns) |column| {
+            for (column) |element| {
+                if (!std.math.isFinite(element)) return error.SingularMatrix;
+            }
+        }
+        return inverse;
     }
 
     pub fn computeTranslation(offset: Vector3) Matrix4 {
@@ -159,16 +174,26 @@ pub const Matrix4 = extern struct {
     /// Counter-clockwise around `axis` (right-hand rule) by `angle_radians`.
     /// `axis` need not be unit length but must not be zero: `error.InvalidRotation`.
     pub fn computeRotationAroundAxis(angle_radians: f32, axis: Vector3) Error!Matrix4 {
-        _ = .{ angle_radians, axis };
-        @panic("not implemented");
+        const axis_length = axis.computeLength();
+        if (!(axis_length > 0) or !std.math.isFinite(axis_length) or !std.math.isFinite(angle_radians)) return error.InvalidRotation;
+        var rotation: Matrix4 = undefined;
+        cglm.glmc_rotate_make(&rotation.columns, angle_radians, &axis.toArray());
+        return rotation;
     }
 
     /// World space to view space for a camera at `eye` looking at `target`:
     /// the camera ends at the origin looking down -Z. `error.DegenerateLookAt`
     /// when no orientation is defined (see `Error`).
     pub fn computeLookAt(eye: Vector3, target: Vector3, up_direction: Vector3) Error!Matrix4 {
-        _ = .{ eye, target, up_direction };
-        @panic("not implemented");
+        if (!eye.isFinite() or !target.isFinite() or !up_direction.isFinite()) return error.DegenerateLookAt;
+        // |forward x up| = |forward| |up| sin(angle). This also catches a zero
+        // forward (eye == target) and a zero up direction.
+        const forward = target.subtract(eye);
+        const sine_scaled_by_lengths = forward.computeCrossProduct(up_direction).computeLength();
+        if (sine_scaled_by_lengths <= parallel_sine_tolerance * forward.computeLength() * up_direction.computeLength()) return error.DegenerateLookAt;
+        var view: Matrix4 = undefined;
+        cglm.glmc_lookat_rh_zo(&eye.toArray(), &target.toArray(), &up_direction.toArray(), &view.columns);
+        return view;
     }
 
     /// View space to Vulkan clip space: depth 0 at the near plane and 1 at the
@@ -176,7 +201,15 @@ pub const Matrix4 = extern struct {
     /// 0 < field of view < pi, aspect ratio > 0, and 0 < near < far:
     /// `error.InvalidPerspective` otherwise.
     pub fn computeVulkanPerspective(vertical_field_of_view_radians: f32, aspect_ratio: f32, near_plane_distance: f32, far_plane_distance: f32) Error!Matrix4 {
-        _ = .{ vertical_field_of_view_radians, aspect_ratio, near_plane_distance, far_plane_distance };
-        @panic("not implemented");
+        // Written so that NaN fails every comparison.
+        const field_of_view_is_valid = vertical_field_of_view_radians > 0 and vertical_field_of_view_radians < std.math.pi;
+        const aspect_ratio_is_valid = aspect_ratio > 0 and std.math.isFinite(aspect_ratio);
+        const planes_are_valid = near_plane_distance > 0 and far_plane_distance > near_plane_distance and std.math.isFinite(far_plane_distance);
+        if (!field_of_view_is_valid or !aspect_ratio_is_valid or !planes_are_valid) return error.InvalidPerspective;
+        var projection: Matrix4 = undefined;
+        cglm.glmc_perspective_rh_zo(vertical_field_of_view_radians, aspect_ratio, near_plane_distance, far_plane_distance, &projection.columns);
+        // cglm's right-handed 0..1 projection keeps y up; Vulkan's clip space has y down.
+        projection.columns[1][1] = -projection.columns[1][1];
+        return projection;
     }
 };

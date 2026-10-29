@@ -22,10 +22,27 @@ cglm stays underneath.
 const math_stack = @import("math_stack");
 const Matrix4 = math_stack.Matrix4;
 
-const view = Matrix4.computeLookAt(.{ .x = 3, .y = 2.5, .z = 4 }, .{ .x = 0, .y = 0, .z = 0 }, .{ .x = 0, .y = 1, .z = 0 });
-const projection = Matrix4.computeVulkanPerspective(std.math.degreesToRadians(60.0), 16.0 / 9.0, 0.1, 100);
+const view = try Matrix4.computeLookAt(.{ .x = 3, .y = 2.5, .z = 4 }, .{ .x = 0, .y = 0, .z = 0 }, .{ .x = 0, .y = 1, .z = 0 });
+const projection = try Matrix4.computeVulkanPerspective(std.math.degreesToRadians(60.0), 16.0 / 9.0, 0.1, 100);
 const view_projection = projection.multiply(view);
 ```
+
+## Errors
+
+cglm never reports failure; given a degenerate input it returns zeros,
+infinities, or NaN, which draw nothing and trip no validation layer. The four
+wrappers that can meet such an input return `math_stack.Error!Matrix4`:
+
+| Function | Error | When |
+| --- | --- | --- |
+| `computeInverse` | `SingularMatrix` | determinant zero or not finite, or the inverse overflows |
+| `computeRotationAroundAxis` | `InvalidRotation` | zero-length or non-finite axis, non-finite angle |
+| `computeLookAt` | `DegenerateLookAt` | `eye == target`, view direction parallel to `up_direction` (sine of the angle ≤ `parallel_sine_tolerance`), zero up direction, non-finite input |
+| `computeVulkanPerspective` | `InvalidPerspective` | field of view outside (0, π), aspect ratio ≤ 0, near ≤ 0, far ≤ near, non-finite input |
+
+Everything else (vector arithmetic, `multiply`, `transformPoint`, `transpose`,
+`computeTranslation`) cannot fail and returns its value directly. The raw
+`cglm` declarations do no checking.
 
 Raw access: `math_stack.cglm` holds the `extern` declarations of the cglm
 functions the wrappers call (`src/cglm.zig`).
