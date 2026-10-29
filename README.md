@@ -118,6 +118,7 @@ zig build event-logger        # rung 0 — platform only (no vulkan). ~fastest b
 zig build clear-color         # rung 1 — platform + vulkan (raw surface hand-off)
 zig build clear-color-2       # rung 2 — same app on zGameLib Gpu/FrameRing helpers
 zig build hello-triangle      # rung 2+ — adds VMA vertex buffer + pipeline
+zig build depth-cube          # 3D path — dynamic rendering, depth buffer, indexed mesh, camera
 ```
 
 Each example is a complete, runnable app — see [`docs/examples/`](docs/examples/)

@@ -81,6 +81,36 @@ pub fn create(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.bui
             .dependOn(&run.step);
     }
 
+    // depth-cube — the first rung of the 3D path: dynamic rendering + depth buffer + indexed mesh
+    {
+        const exe = b.addExecutable(.{
+            .name = "depth-cube",
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("examples/depth-cube/main.zig"),
+                .target = target,
+                .optimize = optimize,
+            }),
+        });
+        exe.root_module.addImport("zgame", m.zgame);
+
+        const vertex_shader_spv = addShader(b, "cube.vert", b.path("examples/depth-cube/shaders/cube.vert.glsl"));
+        const fragment_shader_spv = addShader(b, "cube.frag", b.path("examples/depth-cube/shaders/cube.frag.glsl"));
+        exe.root_module.addAnonymousImport("shaders/cube.vert.spv", .{ .root_source_file = vertex_shader_spv });
+        exe.root_module.addAnonymousImport("shaders/cube.frag.spv", .{ .root_source_file = fragment_shader_spv });
+
+        exes.append(b.allocator, exe) catch @panic("OOM");
+
+        const compile_step = b.step("depth-cube", "Build + install the depth-cube example (3D path: depth buffer + indexed mesh)");
+        compile_step.dependOn(&exe.step);
+        compile_step.dependOn(&b.addInstallArtifact(exe, .{}).step);
+        compile_steps.append(b.allocator, compile_step) catch @panic("OOM");
+
+        const run = b.addRunArtifact(exe);
+        run.addPassthruArgs();
+        b.step("run-depth-cube", "Build + run the depth-cube example (`-- --frames N` exits after N frames)")
+            .dependOn(&run.step);
+    }
+
     add(b, .{
         .name = "animation-demo",
         .source = "examples/animation-demo/main.zig",
