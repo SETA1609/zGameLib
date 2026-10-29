@@ -45,6 +45,7 @@ python scripts/ci.py integration      # test-integration -Dshaderc (auto-wraps x
 
 ./scripts/build-in-docker.sh [step]   # runs `zig build <step>` in the container (default: pipeline)
 ./scripts/shell.sh                    # interactive container shell
+./scripts/agent.sh [command]          # agent container: Claude Code, own login in volume personal-agent-home; commits, no push
 ./scripts/ci.sh check                 # bash equivalent for local Linux debugging
 ```
 
