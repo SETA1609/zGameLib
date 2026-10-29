@@ -1,10 +1,18 @@
 # Changelog
 
-Last updated: 2026-10-29T16:30Z
+Last updated: 2026-10-29T17:30Z
 
 Changes per issue, newest first. Issues are tracked in [issues.md](issues.md). Each PR adds its entry and updates the timestamp above. History before this file: `git log`.
 
 ## Unreleased
+
+### Issue 7 Add a cglm math adapter
+
+Branch `issue-7-add-a-cglm-math-adapter`.
+
+- `libs/zig-c-math-stack-adapter` (interim name): a standalone package shaped like the platform and Vulkan adapters, kept in this repository until its API settles. It builds cglm v0.9.6 (MIT, pinned by commit) as a static library and wraps it as Zig types: `Vector3`, `Vector4`, `Matrix4` (multiply, transform, transpose, inverse, translation, rotation around an axis, right-handed look-at, Vulkan perspective with depth 0..1 and y down). Own `README.md`, `issues.md`, `CHANGELOG.md`, MIT `LICENSE`, and 21 tests.
+- zGameLib imports it as a path dependency and re-exports it as `zgame.math_stack`; `shared/camera.zig` is unchanged.
+- Checked in a Zig 0.17.0 container: the adapter's `zig build test` passes 21 of 21 in Debug and ReleaseFast (20 of 21 failed against the stubs first); zGameLib's `zig build`, `zig build test`, `ci.py check`, and the decoupling gate pass; the platform-only `event-logger` contains no cglm symbols.
 
 ### Issue 2 Start the 3D path
 
