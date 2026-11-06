@@ -1,10 +1,17 @@
 # Changelog
 
-Last updated: 2026-10-29T21:46Z
+Last updated: 2026-11-06T01:10Z
 
 Changes per issue, newest first. Issues are tracked in [issues.md](issues.md). Each PR adds its entry and updates the timestamp above. History before this file: `git log`.
 
 ## Unreleased
+
+### Issue 8 Move the Vulkan adapter pin to the Win32 surface
+
+Branch `issue-8-move-the-vulkan-adapter-pin-to-the-win32-surface`.
+
+- `libs/zig-cpp-vulkan-stack-adapter`: `912b245` → `a5c700f` (the adapter's #8). `createWin32Surface` is implemented; on Windows the surface bridge no longer reaches a panic.
+- Checked in a Zig 0.17.0 container: `ci.py check` and `ci.py decoupling` pass; `zig build test` passes (29 of 29 steps). The adapter's own CI passed on Linux, macOS, and Windows.
 
 ### Issue 7 Add a cglm math adapter
 

@@ -4,6 +4,15 @@ Each issue is one PR. Status is `todo`, `doing`, `review`, `done`, or `dropped`.
 
 ---
 
+## Issue 8 — Move the Vulkan adapter pin to the Win32 surface
+
+Status: review
+Needs: —
+
+The Vulkan adapter implemented `createWin32Surface` (its #8, `a5c700f`): it calls `vkCreateWin32SurfaceKHR` instead of panicking. Move the `libs/zig-cpp-vulkan-stack-adapter` submodule from `912b245` to `a5c700f`, so the `.windows` branch of the surface bridge (docs/theory/03-the-surface-bridge.md) reaches a real surface creator. No zGameLib code changes.
+
+Done when: the `check` and `decoupling` gates and `zig build test` pass with the new pin.
+
 ## Issue 7 — Add a cglm math adapter
 
 Status: review
