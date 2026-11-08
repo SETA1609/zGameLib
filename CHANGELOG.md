@@ -2,7 +2,7 @@
 
 Last updated: 2026-11-06T01:10Z
 
-Changes per issue, newest first. Issues are tracked in [issues.md](issues.md). Each PR adds its entry and updates the timestamp above. History before this file: `git log`.
+Changes per issue, newest first. Issues are tracked in [issues.md](issues.md). An issue branch adds its entry as `changes/issue-<n>.md` (see [changes/README.md](changes/README.md)); a release branch moves the entries into a version section here. Until the first release, older entries stay under *Unreleased*. History before this file: `git log`.
 
 ## Unreleased
 
