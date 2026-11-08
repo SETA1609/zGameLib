@@ -101,27 +101,42 @@ This separation is a core design principle, informed by Redot/Godot's layered ar
 
 ---
 
-## Version milestones (aligned with Nexus)
+## Releases
 
-Each release ships **implementation + documentation + ≥1 example** where applicable.
+How a release happens, so that open branches do not conflict on the bookkeeping files:
 
-| Version | Priority | Focus | Example | Nexus gate |
-|---------|----------|-------|---------|------------|
-| **0.1.0** | 🎯 | Foundation ✅ | `clear-color`, `clear-color-2` | Nexus 0.1.0 |
-| **0.2.0** | 🎯 | First pipeline | `hello-triangle` | — |
-| **0.3.0** | 🎯 | 2D game validation | `space-invaders`, `snake` | — |
-| **0.4.0** | 🎯 | **2D batcher v0** | `breakout` (batched sprites) | Nexus 0.2.0–0.6.0 |
-| **0.5.0** | 🎯 | Input depth | `tetris` | Nexus 0.5.0 |
-| **0.6.0** | 🎯 | Shaders + sprites | `sprite-showcase` (zClip atlas) | Nexus 0.7.0 |
-| **0.7.0** | 🎯 | **`zassets` image decode** | `image-viewer` | Nexus 0.2.0 textures |
-| **0.8.0** | 🎯 | Batcher maturity + text quads | `particles` (2D GPU particles) | Nexus 0.7.0–0.8.0 |
-| **0.9.0** | 🎯 | **`zaudio`** | `audio-demo` | Nexus 1.0.0 audio |
-| **1.0.0** | 🎯 | Asset pipeline stable | `asset-demo` | Nexus 1.0.0 resources |
-| **1.1.0** | 🔧 | **`zimgui`** (late optional) | `imgui-demo` | Crucible v1.1.0 |
-| **1.2.0** | 🔧 | **`zfont`** (after ImGui) | font smoke | Nexus `TextServer` later |
-| **2.0.0** | ⏳ | **3D depth smoke** | `hello-cube` | Nexus 2.0.0 |
-| **2.1.0** | ⏳ | glTF / skeletal (zClip) | `gltf-viewer` | Nexus 2.1.0 |
-| **2.2.0** | ⏳ | GNS networking sibling | `net-echo` | Nexus 2.2.0 |
+- **Issue branches** (`issue-<n>-<slug>`) change code, tests, and docs, and add one changelog fragment, `changes/issue-<n>.md` (see [`changes/README.md`](../changes/README.md)). They do not edit this roadmap, `CHANGELOG.md`, the statuses in `issues.md`, or `.version` in `build.zig.zon`. Each fragment is a file of its own, so two open branches never edit the same line.
+- **Bookkeeping branches** make those edits, one at a time: `release-vX.Y.Z` when a milestone's issues have merged, or `bookkeeping-<yyyy-mm-dd>` for planning between releases (new issues, re-scoped milestones). A release branch moves the fragments into a `## vX.Y.Z (yyyy-mm-dd)` section of `CHANGELOG.md` with `devops-tools changelog-fragments --settings-file devops-tools.toml release --section-title "vX.Y.Z (yyyy-mm-dd)"` ([devops_tools](https://github.com/SETA1609/devops_tools)), marks the milestone released below, sets the issues it closes to `done`, and sets `.version`.
+- **One minor release per milestone.** After the release branch merges, the maintainer tags its merge commit `vX.Y.0` on `main` and pushes the tag. A patch release `vX.Y.Z` only carries fixes for a released minor. Tags are never moved or deleted.
+- **Consumers** pin a tagged commit (commit and content hash) and name the tag in a comment.
+- Milestones marked "shipped, untagged" came before the first tag; pin a tagged release instead.
+- **Submodules:** a release pins `libs/zig-cpp-platform-stack-adapter`, `libs/zig-cpp-vulkan-stack-adapter`, and `libs/zClip` to release tags of those libraries. The in-tree `libs/zig-c-math-stack-adapter` ships inside zGameLib's releases until it moves to its own repository, where its first tag is `v0.1.0`.
+
+## Version milestones
+
+**Status:** `released vX.Y.Z` = tagged on `main` · `shipped, untagged` = on `main` before tagging began · `next` = the milestone being worked on · `planned` = not started. The **Steps** column lists the work in each milestone (☑ done, ☐ open); only a bookkeeping branch changes it. Each release ships **implementation + documentation + at least one example** where applicable. A release that moves a submodule pins it to that library's release tag. The *Nexus gate* column is the Nexus release that waits for it.
+
+| Version | Priority | Focus | Example | Nexus gate | Status |
+|---------|----------|-------|---------|------------|--------|
+| **0.1.0** | 🎯 | Foundation: module re-exports, surface bridge, swapchain, `Gpu`, `FrameRing`, the decoupling gate | `clear-color`, `clear-color-2` | Nexus 0.1.0 | shipped, untagged |
+| **0.2.0** | 🎯 | First pipeline + the start of the 3D path, on Zig 0.17.0: `hello-triangle` (pipeline + VMA vertex buffer); depth buffer, camera, indexed mesh, dynamic rendering; the cglm math adapter (`zgame.math_stack`); the swapchain on the Vulkan adapter's helper; every submodule pinned to a release tag (Vulkan adapter `v0.6.0`, platform adapter `v0.7.0`, zClip `v0.6.0`). Issues 1, 2, 3, 4, 7, 8, 9. | `hello-triangle`, `depth-cube` | — | **next: first tag `v0.2.0`**, cut on the merge of `release-v0.2.0` once Issue 9 has merged and the three tags exist |
+| **0.3.0** | 🎯 | Validation-clean examples: swapchain image transitions ordered after acquire (Issue 5); `hello-triangle` without validation errors, its framebuffers rebuilt after a recreate (Issue 6) | every rendering example under synchronization validation | — | planned |
+| **0.4.0** | 🎯 | Input contexts and application paths: platform adapter `v0.8.0` (`pushContext`/`popContext`, data and cache directories) | `event-logger` | — | planned |
+| **0.5.0** | 🎯 | 2D game validation | `space-invaders`, `snake` | — | planned |
+| **0.6.0** | 🎯 | **2D batcher v0** | `breakout` (batched sprites) | Nexus 0.2.0–0.6.0 | planned |
+| **0.7.0** | 🎯 | Input depth: platform adapter `v0.9.0` (axis values, injection, bindings from a file) | `tetris` | Nexus 0.5.0 | planned |
+| **0.8.0** | 🎯 | Shaders + sprites; unified `zgame.animation` over zClip's sprite path | `sprite-showcase` (zClip atlas) | Nexus 0.7.0 | planned |
+| **0.9.0** | 🎯 | **`zassets` image decode** | `image-viewer` | Nexus 0.2.0 textures | planned |
+| **0.10.0** | 🎯 | Batcher maturity + text quads | `particles` (2D GPU particles) | Nexus 0.7.0–0.8.0 | planned |
+| **0.11.0** | 🎯 | **`zaudio`** | `audio-demo` | Nexus 1.0.0 audio | planned |
+| **1.0.0** | 🎯 | Asset pipeline stable; every component ships with docs + tests + example; continuous-integration matrix green | `asset-demo` | Nexus 1.0.0 resources | planned |
+| **1.1.0** | 🔧 | **`zimgui`** (late optional) | `imgui-demo` | Crucible v1.1.0 | planned |
+| **1.2.0** | 🔧 | **`zfont`** (after ImGui) | font smoke | Nexus `TextServer` later | planned |
+| **2.0.0** | ⏳ | **3D maturity** beyond the 0.2.0 start (`depth-cube`) | `hello-cube` | Nexus 2.0.0 | planned |
+| **2.1.0** | ⏳ | glTF / skeletal (zClip `v0.8.0`+) | `gltf-viewer` | Nexus 2.1.0 | planned |
+| **2.2.0** | ⏳ | GNS (GameNetworkingSockets) networking sibling | `net-echo` | Nexus 2.2.0 | planned |
+
+Re-scoped 2026-11-08 so the first tag matches `main`: the 3D path started in 0.2.0 (ahead of the 2D batcher, for a 3D consumer), validation fixes and the platform adapter's input contexts take 0.3.0 and 0.4.0, and the earlier 0.3.0–0.9.0 move up by two. The separate *Framework Version Milestones* table is merged into this one.
 
 ---
 
@@ -129,12 +144,12 @@ Each release ships **implementation + documentation + ≥1 example** where appli
 
 | Library | Status | Purpose | Backend(s) | 2D game? |
 |---------|--------|---------|------------|----------|
-| `zig-cpp-platform-stack-adapter` | **shipped** v0.6+ | Windowing, input, time, native handles | SDL3 (native planned) | 🎯 |
-| `zig-cpp-vulkan-stack-adapter` | **shipped** v0.2+ | Vulkan stack: vk + volk + VMA + shaderc | vulkan-zig | 🎯 |
-| `zClip` | **partial** v0.6+ | **Sprite-atlas** 🎯 + skeletal/glTF ⏳ | cgltf | 🎯 atlas only |
-| `zaudio` | **planned** v0.9.0 | Audio playback + streaming | miniaudio | 🎯 |
-| `zassets` | **planned** v0.7.0 | Asset loading / VFS / image decode | — | 🎯 |
-| `zmath` | **planned** | SIMD-friendly math | — | 🎯 (light) |
+| `zig-cpp-platform-stack-adapter` | **shipped** v0.7.0 | Windowing, input, time, native handles | SDL3 (native planned) | 🎯 |
+| `zig-cpp-vulkan-stack-adapter` | **shipped** v0.6.0 | Vulkan stack: vk + volk + VMA + shaderc | vulkan-zig | 🎯 |
+| `zClip` | **partial** v0.6.0 | **Sprite-atlas** 🎯 + skeletal/glTF ⏳ | cgltf | 🎯 atlas only |
+| `zaudio` | **planned** v0.11.0 | Audio playback + streaming | miniaudio | 🎯 |
+| `zassets` | **planned** v0.9.0 | Asset loading / VFS / image decode | — | 🎯 |
+| `zig-c-math-stack-adapter` (`zgame.math_stack`) | **shipped** v0.2.0 (in-tree) | Vector and matrix math | cglm | 🎯 (light) |
 | `zimgui` (wrapper) | **planned (late)** v1.1.0 | Optional Dear ImGui bridge | Dear ImGui via `-DimGui` | 🔧 |
 | `zfont` | **planned (after zimgui)** | Font rendering / shaping | FreeType + HarfBuzz optional | 🔧 |
 | `zgns` (working name) | **planned** v2.2.0 ⏳ | GNS networking wrapper | GameNetworkingSockets | ⏳ |
@@ -148,13 +163,13 @@ Each release ships **implementation + documentation + ≥1 example** where appli
 | Re-exports (platform / vulkan / surface / swapchain) | `src/root.zig` | **shipped** | 🎯 |
 | Render helpers: `Gpu`, `FrameRing`, `transitionImage` | `shared/gpu.zig`, `shared/frame.zig` | **shipped** | 🎯 |
 | Platform-only module (`zgame_platform`) | `src/root_platform.zig` | **shipped** | 🎯 |
-| **2D batcher** (sprites, quads, atlases) | — | **planned** v0.4.0 | 🎯 **critical** |
+| **2D batcher** (sprites, quads, atlases) | — | **planned** v0.6.0 | 🎯 **critical** |
 | Animation: raw `zclip` + unified `zgame.animation` | `shared/animation.zig` + `libs/zClip` | **partial** | 🎯 |
-| Asset / VFS integration (`zassets` bridge) | — | **planned** v0.7.0 | 🎯 |
-| Audio integration (`zaudio` bridge) | — | **planned** v0.9.0 | 🎯 |
+| Asset / VFS integration (`zassets` bridge) | — | **planned** v0.9.0 | 🎯 |
+| Audio integration (`zaudio` bridge) | — | **planned** v0.11.0 | 🎯 |
 | Dear ImGui optional wrapper (`zimgui`) | — | **planned** v1.1.0 | 🔧 |
 | Font module (`zfont`) | — | **planned** v1.2.0 | 🔧 |
-| 3D depth / mesh helpers | — | **planned** v2.0.0 | ⏳ |
+| 3D depth / mesh helpers | `shared/depth.zig`, `shared/camera.zig`, `shared/mesh.zig` | **started** v0.2.0; maturity v2.0.0 | ⏳ |
 | GNS networking sibling | — | **planned** v2.2.0 | ⏳ |
 | `App` harness (window + frame loop) | `src/app.zig` | **stub** | stretch |
 
@@ -219,23 +234,6 @@ Also in Phase 3:
 - [ ] WebGPU backend exploration (pairs with Nexus theory/12)
 
 **Explicitly not blocking the 2D game.**
-
----
-
-## Framework Version Milestones
-
-These milestones describe zGameLib's own evolution (library releases), distinct from the Nexus-aligned version table above.
-
-| Release | Focus | Key Deliverables |
-| --- | --- | --- |
-| **v0.1.0** | Foundation | Module re-exports, surface bridge, Swapchain helper, CI decoupling checks. *Current.* |
-| **v0.2.0** | First pipeline | Complete hello-triangle (pipeline + vertex buffer + VMA). Early 2D batcher exploration. |
-| **v0.3.0** | 2D batcher v0 | Efficient sprite/quad batching, atlas integration with zClip, text quad support. |
-| **v0.4.0** | Assets | `zassets`: image decode (PNG), basic VFS, texture creation. |
-| **v0.5.0** | Audio | `zaudio`: miniaudio backend, playback/streaming. Hot-reload middleware. |
-| **v0.6.0** | Animation | Unified `zgame.animation` on top of zClip. Skeletal/glTF prep. Profiling hooks. |
-| **v0.7.0** | Input & polish | Deeper input handling, math utilities (`zmath`), docs polish. |
-| **v1.0.0** | Stable | Every component ships with docs + tests + example. CI matrix green. Ready for Nexus heavy integration. |
 
 ---
 
