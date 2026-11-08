@@ -22,7 +22,7 @@ const Swapchain = sc_mod.Swapchain;
 
 const max_frames = 2;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
     // ---- platform lib: window + the Vulkan handshake inputs ----
     try platform.init(.{});
     defer platform.deinit();
@@ -74,8 +74,7 @@ pub fn main() !void {
     const queue = vkd.getDeviceQueue(device, qfam, 0);
 
     // ---- swapchain (the shared helper) ----
-    var sc = Swapchain{ .vki = vki, .vkd = vkd, .pdev = pdev, .device = device, .surface = surface };
-    try sc.init(extentOf(win));
+    var sc = try Swapchain.create(init.gpa, vki, vkd, pdev, device, surface, extentOf(win));
     defer sc.deinit();
 
     // ---- per-frame command buffers + sync ----

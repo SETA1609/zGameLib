@@ -57,7 +57,7 @@ pub fn main(init: std.process.Init) !void {
 
     var gpu = try zgame.Gpu.init(window, .{ .app_name = "depth-cube", .enable_dynamic_rendering = true });
     defer gpu.deinit();
-    var swapchain = try gpu.createSwapchain(extentOfWindow(window));
+    var swapchain = try gpu.createSwapchain(init.gpa, extentOfWindow(window));
     defer swapchain.deinit();
     var frame_ring = try zgame.FrameRing(max_frames_in_flight).init(gpu);
     defer frame_ring.deinit();

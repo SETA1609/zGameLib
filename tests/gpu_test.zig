@@ -80,7 +80,7 @@ test "gpu: createSwapchain yields a non-null swapchain with images" {
     try gate(done.swapchain_from_gpu);
     var h = try Harness.init();
     defer h.deinit();
-    var sc = try h.gpu.createSwapchain(extentOf(h.win));
+    var sc = try h.gpu.createSwapchain(std.testing.allocator, extentOf(h.win));
     defer sc.deinit();
     try std.testing.expect(sc.handle != .null);
     try std.testing.expect(sc.count > 0);
@@ -102,7 +102,7 @@ test "frame ring: begin/record/end completes frames and cycles the index" {
     try gate(done.frame_ring);
     var h = try Harness.init();
     defer h.deinit();
-    var sc = try h.gpu.createSwapchain(extentOf(h.win));
+    var sc = try h.gpu.createSwapchain(std.testing.allocator, extentOf(h.win));
     defer sc.deinit();
     var frames = try zgame.FrameRing(2).init(h.gpu);
     defer frames.deinit();

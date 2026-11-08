@@ -20,7 +20,7 @@ const vk = zgame.vk;
 
 const max_frames = 2;
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
     try platform.init(.{});
     defer platform.deinit();
     const win = try platform.Window.create(.{ .title = "clear-color-2", .size = .{ .w = 800, .h = 600 }, .renderer = .vulkan });
@@ -30,7 +30,7 @@ pub fn main() !void {
     var gpu = try zgame.Gpu.init(win, .{ .app_name = "clear-color-2" });
     defer gpu.deinit();
 
-    var sc = try gpu.createSwapchain(extentOf(win));
+    var sc = try gpu.createSwapchain(init.gpa, extentOf(win));
     defer sc.deinit();
 
     // Frames-in-flight: command buffers + per-frame sync, owned by the ring.

@@ -17,7 +17,7 @@ const vertices = [_]Vertex{
     .{ .pos = .{ -0.5, 0.5 }, .color = .{ 0.0, 0.0, 1.0 } },
 };
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
     try platform.init(.{});
     defer platform.deinit();
     const win = try platform.Window.create(.{ .title = "hello-triangle", .size = .{ .w = 800, .h = 600 }, .renderer = .vulkan });
@@ -26,7 +26,7 @@ pub fn main() !void {
     var gpu = try zgame.Gpu.init(win, .{ .app_name = "hello-triangle" });
     defer gpu.deinit();
 
-    var sc = try gpu.createSwapchain(extentOf(win));
+    var sc = try gpu.createSwapchain(init.gpa, extentOf(win));
     defer sc.deinit();
 
     var frames = try zgame.FrameRing(max_frames).init(gpu);

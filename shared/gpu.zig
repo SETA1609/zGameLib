@@ -110,18 +110,12 @@ pub const Gpu = struct {
         self.vki.destroyInstance(self.instance, null);
     }
 
-    /// A swapchain bound to this device/surface, sized to `want`. The
-    /// `Swapchain` keeps its own copies of the dispatch tables — see swapchain.zig.
-    pub fn createSwapchain(self: *Gpu, want: vk.Extent2D) !sc.Swapchain {
-        var chain = sc.Swapchain{
-            .vki = self.vki,
-            .vkd = self.vkd,
-            .pdev = self.pdev,
-            .device = self.device,
-            .surface = self.surface,
-        };
-        try chain.init(want);
-        return chain;
+    /// A swapchain bound to this device/surface with zGameLib's policy, sized to
+    /// `want` where the surface lets the swapchain choose. `allocator` holds its
+    /// image and view lists until `deinit`. The `Swapchain` keeps its own copies
+    /// of the dispatch tables — see swapchain.zig.
+    pub fn createSwapchain(self: *Gpu, allocator: std.mem.Allocator, want: vk.Extent2D) sc.Error!sc.Swapchain {
+        return sc.Swapchain.create(allocator, self.vki, self.vkd, self.pdev, self.device, self.surface, want);
     }
 
     /// The first memory type allowed by `memory_type_bits` (from a resource's
