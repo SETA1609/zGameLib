@@ -70,7 +70,7 @@ Every issue that adds or changes behaviour lands as separate commits in this ord
 
 **Framework glue** lives in `shared/` and is wired as intermediate modules in `build.zig`, layered *over* the raw libs (never replacing them — every helper exposes its underlying handles as public fields, "raw access always"):
 - `surface.zig` — the comptime platform↔vulkan surface bridge; the single place the two adapter libs meet. Branches on target OS at comptime (X11/Wayland tried at runtime on Linux, Android abi checked first), passing raw OS primitives with no shared type crossing the boundary.
-- `swapchain.zig` — reusable swapchain (format/present-mode/recreation policy).
+- `swapchain.zig` — the framework's swapchain policy (`framework_options`) over the Vulkan adapter's `vulkan_stack.Swapchain` helper, which owns creation and recreation; `gpu.createSwapchain(allocator, extent)`.
 - `gpu.zig` — `Gpu.init(window, .{})`: loader → instance → surface → device → present queue, all public fields.
 - `frame.zig` — `FrameRing(N)`: comptime `N` frames-in-flight (fixed-size arrays, no allocation); begin → record → end (acquire → submit → present) seam; handles `OutOfDateKHR` swapchain recreation (`begin` returns `null` to skip the iteration).
 - The 3D path, beside the 2D one (opt-in with `Gpu.Options.enable_dynamic_rendering`): `camera.zig` (pure `Matrix4`/`Vector3`/`PerspectiveCamera` math in Vulkan conventions), `depth.zig` (`DepthBuffer`), `mesh.zig` (`IndexedMesh`). `examples/depth-cube` uses all three.

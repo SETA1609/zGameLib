@@ -1,10 +1,22 @@
 # Changelog
 
-Last updated: 2026-11-06T01:10Z
+Last updated: 2026-11-08T03:00Z
 
 Changes per issue, newest first. Issues are tracked in [issues.md](issues.md). An issue branch adds its entry as `changes/issue-<n>.md` (see [changes/README.md](changes/README.md)); a release branch moves the entries into a version section here. Until the first release, older entries stay under *Unreleased*. History before this file: `git log`.
 
 ## Unreleased
+
+### Issue 9 Delegate the swapchain to the Vulkan adapter
+
+Branch `issue-9-delegate-the-swapchain-to-the-vulkan-adapter`.
+
+- `libs/zig-cpp-vulkan-stack-adapter`: `a5c700f` → `bf23d83` (the adapter's #9, its swapchain helper).
+- `shared/swapchain.zig` is zGameLib's policy over the adapter's `vulkan_stack.Swapchain`: `framework_options` (8-bit blue-green-red-alpha pixels in the standard red-green-blue colour space, mailbox present mode else first-in-first-out, the minimum image count plus one, colour-attachment and transfer-destination usage). It makes no swapchain create or destroy call of its own. A failed rebuild now keeps the old swapchain, where the old code had already destroyed its image views.
+- API changes: `gpu.createSwapchain(allocator, extent)` takes an allocator (the adapter keeps the image and view lists on the heap); `Swapchain.create(allocator, vki, vkd, pdev, device, surface, extent)` replaces the struct literal plus `init`; `images` and `views` are slices; new `adapter_swapchain` (the adapter's helper), `Error` (the adapter's swapchain error set), and `framework_options`. `recreate(extent)`, `deinit()`, `handle`, `format`, `extent`, and `count` stay.
+- A 0×0 surface (a minimized window) is `error.SurfaceHasZeroExtent`. `FrameRing.begin` and `end` keep the old swapchain and `begin` returns `null` until the window is restored; the examples' resize handlers do the same.
+- Tests: `tests/swapchain_policy_test.zig` (5 tests, `zig build test`) for `framework_options`; `tests/gpu_test.zig` gains 3 (the fields mirror the adapter's helper, `recreate` replaces the handle without leaking, a frame completes after a recreate).
+- Docs: theory 05 rewritten around "mechanism in the adapter, policy in the framework", with the kept old swapchain, the zero extent, and what the Khronos `KHR` ending on Vulkan names means; theory 06 covers the minimized window.
+- Checked in a Zig 0.17.0 container (lavapipe, Xvfb): `zig build test` 31/31 steps; `test-gpu` 15/15 (5 crashed against the stubs); `test-tdd` 29/29 steps; `ci.py check`, `decoupling`, and `sync-validation` (depth-cube, 30 frames, no validation errors) pass; `zig build examples` passes. Not checked: resizing and minimizing a real window.
 
 ### Issue 8 Move the Vulkan adapter pin to the Win32 surface
 

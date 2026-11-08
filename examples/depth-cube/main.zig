@@ -57,7 +57,7 @@ pub fn main(init: std.process.Init) !void {
 
     var gpu = try zgame.Gpu.init(window, .{ .app_name = "depth-cube", .enable_dynamic_rendering = true });
     defer gpu.deinit();
-    var swapchain = try gpu.createSwapchain(extentOfWindow(window));
+    var swapchain = try gpu.createSwapchain(init.gpa, extentOfWindow(window));
     defer swapchain.deinit();
     var frame_ring = try zgame.FrameRing(max_frames_in_flight).init(gpu);
     defer frame_ring.deinit();
@@ -92,7 +92,10 @@ pub fn main(init: std.process.Init) !void {
         platform.pollAllEvents();
         const events = platform.events();
         if (events.close_requested) break;
-        if (events.resizes.len > 0) try swapchain.recreate(extentOfWindow(window));
+        if (events.resizes.len > 0) swapchain.recreate(extentOfWindow(window)) catch |recreate_error| switch (recreate_error) {
+            error.SurfaceHasZeroExtent => {}, // minimized: keep the old swapchain until the window is restored
+            else => return recreate_error,
+        };
 
         const frame = (try frame_ring.begin(&swapchain, extentOfWindow(window))) orelse continue;
         if (depth_buffer.extent.width != swapchain.extent.width or depth_buffer.extent.height != swapchain.extent.height) {

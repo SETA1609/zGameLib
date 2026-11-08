@@ -80,10 +80,69 @@ test "gpu: createSwapchain yields a non-null swapchain with images" {
     try gate(done.swapchain_from_gpu);
     var h = try Harness.init();
     defer h.deinit();
-    var sc = try h.gpu.createSwapchain(extentOf(h.win));
+    var sc = try h.gpu.createSwapchain(std.testing.allocator, extentOf(h.win));
     defer sc.deinit();
     try std.testing.expect(sc.handle != .null);
     try std.testing.expect(sc.count > 0);
+}
+
+// WHEN creating a swapchain through the Gpu · GIVEN the framework policy · THEN its public fields mirror the adapter's helper and the images are colour attachments.
+test "swapchain: public fields mirror the adapter's helper" {
+    try gate(done.swapchain_from_gpu);
+    var h = try Harness.init();
+    defer h.deinit();
+    var sc = try h.gpu.createSwapchain(std.testing.allocator, extentOf(h.win));
+    defer sc.deinit();
+    try std.testing.expectEqual(sc.adapter_swapchain.handle, sc.handle);
+    try std.testing.expectEqual(sc.adapter_swapchain.extent, sc.extent);
+    try std.testing.expectEqual(sc.adapter_swapchain.format, sc.format);
+    try std.testing.expectEqual(sc.adapter_swapchain.images.len, sc.images.len);
+    try std.testing.expectEqual(@as(u32, @intCast(sc.images.len)), sc.count);
+    try std.testing.expectEqual(sc.images.len, sc.views.len);
+    try std.testing.expect(sc.adapter_swapchain.create_info.image_usage.color_attachment);
+}
+
+// WHEN recreating the swapchain · GIVEN a created one · THEN it gets a new non-null handle, keeps its images and views, and frees the retired lists (the testing allocator reports leaks).
+test "swapchain: recreate replaces the handle without leaking" {
+    try gate(done.swapchain_from_gpu);
+    var h = try Harness.init();
+    defer h.deinit();
+    var sc = try h.gpu.createSwapchain(std.testing.allocator, extentOf(h.win));
+    defer sc.deinit();
+    const retired_handle = sc.handle;
+    try sc.recreate(extentOf(h.win));
+    try std.testing.expect(sc.handle != .null);
+    try std.testing.expect(sc.handle != retired_handle);
+    try std.testing.expectEqual(sc.adapter_swapchain.handle, sc.handle);
+    try std.testing.expect(sc.count > 0);
+    try std.testing.expectEqual(sc.images.len, sc.views.len);
+}
+
+// WHEN running a frame after a recreate · GIVEN a Gpu + swapchain + FrameRing(2) · THEN the frame completes on the new swapchain.
+test "frame ring: a frame completes after the swapchain was recreated" {
+    try gate(done.frame_ring);
+    var h = try Harness.init();
+    defer h.deinit();
+    var sc = try h.gpu.createSwapchain(std.testing.allocator, extentOf(h.win));
+    defer sc.deinit();
+    var frames = try zgame.FrameRing(2).init(h.gpu);
+    defer frames.deinit();
+    try sc.recreate(extentOf(h.win));
+
+    const vkd = h.gpu.vkd;
+    var completed: u32 = 0;
+    var tries: u32 = 0;
+    while (completed < 1 and tries < 8) : (tries += 1) {
+        const f = (try frames.begin(&sc, extentOf(h.win))) orelse continue;
+        zgame.transitionImage(vkd, f.cmd, f.image, .undefined, .transfer_dst_optimal, .{}, .{ .transfer_write = true }, .{ .transfer = true }, .{ .transfer = true });
+        const color = vk.ClearColorValue{ .float_32 = .{ 0.3, 0.2, 0.1, 1.0 } };
+        vkd.cmdClearColorImage(f.cmd, f.image, .transfer_dst_optimal, &color, &.{zgame.swapchain.colorRange()});
+        zgame.transitionImage(vkd, f.cmd, f.image, .transfer_dst_optimal, .present_src_khr, .{ .transfer_write = true }, .{}, .{ .transfer = true }, .{ .bottom_of_pipe = true });
+        try frames.end(&sc, f, .{ .transfer = true });
+        completed += 1;
+    }
+    h.gpu.waitIdle();
+    try std.testing.expectEqual(@as(u32, 1), completed);
 }
 
 // WHEN initialising a FrameRing(2) from the Gpu · GIVEN a brought-up Gpu · THEN it owns a command pool and starts at frame index 0.
@@ -102,7 +161,7 @@ test "frame ring: begin/record/end completes frames and cycles the index" {
     try gate(done.frame_ring);
     var h = try Harness.init();
     defer h.deinit();
-    var sc = try h.gpu.createSwapchain(extentOf(h.win));
+    var sc = try h.gpu.createSwapchain(std.testing.allocator, extentOf(h.win));
     defer sc.deinit();
     var frames = try zgame.FrameRing(2).init(h.gpu);
     defer frames.deinit();
