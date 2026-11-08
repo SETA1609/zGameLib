@@ -92,7 +92,10 @@ pub fn main(init: std.process.Init) !void {
         platform.pollAllEvents();
         const events = platform.events();
         if (events.close_requested) break;
-        if (events.resizes.len > 0) try swapchain.recreate(extentOfWindow(window));
+        if (events.resizes.len > 0) swapchain.recreate(extentOfWindow(window)) catch |recreate_error| switch (recreate_error) {
+            error.SurfaceHasZeroExtent => {}, // minimized: keep the old swapchain until the window is restored
+            else => return recreate_error,
+        };
 
         const frame = (try frame_ring.begin(&swapchain, extentOfWindow(window))) orelse continue;
         if (depth_buffer.extent.width != swapchain.extent.width or depth_buffer.extent.height != swapchain.extent.height) {

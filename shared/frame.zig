@@ -98,6 +98,8 @@ pub fn FrameRing(comptime max_frames: u32) type {
         /// reset the fence, and open the command buffer. Returns `null` (and
         /// recreates `chain`) when the swapchain was out of date — the caller
         /// should `continue` its loop. `want` is the desired extent on recreate.
+        /// While the surface is 0×0 (a minimized window) the old swapchain is
+        /// kept and every `begin` returns `null` until the window is restored.
         pub fn begin(self: *Self, chain: *sc.Swapchain, want: vk.Extent2D) !?Frame {
             self.want = want;
             const i = self.index;
@@ -106,7 +108,7 @@ pub fn FrameRing(comptime max_frames: u32) type {
 
             const acq = self.vkd.acquireNextImageKHR(self.device, chain.handle, std.math.maxInt(u64), self.img_avail[i], .null) catch |err| switch (err) {
                 error.OutOfDateKHR => {
-                    try chain.recreate(want);
+                    try recreateUnlessZeroExtent(chain, want);
                     return null;
                 },
                 else => return err,
@@ -148,11 +150,20 @@ pub fn FrameRing(comptime max_frames: u32) type {
                 .p_swapchains = @ptrCast(&chain.handle),
                 .p_image_indices = @ptrCast(&image_index),
             }) catch |err| switch (err) {
-                error.OutOfDateKHR => try chain.recreate(self.want),
+                error.OutOfDateKHR => try recreateUnlessZeroExtent(chain, self.want),
                 else => return err,
             };
 
             self.index = (i + 1) % max_frames;
         }
+    };
+}
+
+/// Recreate `chain` for `want`; a 0×0 surface (a minimized window) keeps the
+/// old swapchain, so the next `begin` tries again instead of failing the loop.
+fn recreateUnlessZeroExtent(chain: *sc.Swapchain, want: vk.Extent2D) sc.Error!void {
+    chain.recreate(want) catch |err| switch (err) {
+        error.SurfaceHasZeroExtent => {},
+        else => return err,
     };
 }

@@ -51,7 +51,10 @@ pub fn main(init: std.process.Init) !void {
         platform.pollAllEvents();
         const ev = platform.events();
         if (ev.close_requested) break;
-        if (ev.resizes.len > 0) try sc.recreate(extentOf(win));
+        if (ev.resizes.len > 0) sc.recreate(extentOf(win)) catch |recreate_error| switch (recreate_error) {
+            error.SurfaceHasZeroExtent => {}, // minimized: keep the old swapchain until the window is restored
+            else => return recreate_error,
+        };
 
         // begin → record → end: the ring waits/acquires/submits/presents (and
         // recreates the swapchain on out-of-date); we only record the clear.

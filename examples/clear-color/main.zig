@@ -120,13 +120,19 @@ pub fn main(init: std.process.Init) !void {
         platform.pollAllEvents();
         const ev = platform.events();
         if (ev.close_requested) break;
-        if (ev.resizes.len > 0) try sc.recreate(extentOf(win));
+        if (ev.resizes.len > 0) sc.recreate(extentOf(win)) catch |recreate_error| switch (recreate_error) {
+            error.SurfaceHasZeroExtent => {}, // minimized: keep the old swapchain until the window is restored
+            else => return recreate_error,
+        };
 
         _ = try vkd.waitForFences(device, &.{in_flight[frame]}, .true, std.math.maxInt(u64));
 
         const acq = vkd.acquireNextImageKHR(device, sc.handle, std.math.maxInt(u64), img_avail[frame], .null) catch |err| switch (err) {
             error.OutOfDateKHR => {
-                try sc.recreate(extentOf(win));
+                sc.recreate(extentOf(win)) catch |recreate_error| switch (recreate_error) {
+                    error.SurfaceHasZeroExtent => {}, // minimized: keep the old swapchain until the window is restored
+                    else => return recreate_error,
+                };
                 continue;
             },
             else => return err,
@@ -165,7 +171,10 @@ pub fn main(init: std.process.Init) !void {
             .p_swapchains = @ptrCast(&sc.handle),
             .p_image_indices = @ptrCast(&acq.image_index),
         }) catch |err| switch (err) {
-            error.OutOfDateKHR => try sc.recreate(extentOf(win)),
+            error.OutOfDateKHR => sc.recreate(extentOf(win)) catch |recreate_error| switch (recreate_error) {
+                error.SurfaceHasZeroExtent => {}, // minimized: keep the old swapchain until the window is restored
+                else => return recreate_error,
+            },
             else => return err,
         };
 

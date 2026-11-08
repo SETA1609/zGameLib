@@ -61,22 +61,49 @@ pub const Swapchain = struct {
         surface: vk.SurfaceKHR,
         want: vk.Extent2D,
     ) Error!Swapchain {
-        _ = .{ allocator, vki, vkd, pdev, device, surface, want };
-        @panic("not implemented");
+        var options = framework_options;
+        options.fallback_extent = want;
+        const adapter_swapchain = try vulkan_stack.Swapchain.create(allocator, vki, vkd, pdev, device, surface, options);
+        var swapchain = Swapchain{
+            .allocator = allocator,
+            .vki = vki,
+            .vkd = vkd,
+            .pdev = pdev,
+            .device = device,
+            .surface = surface,
+            .adapter_swapchain = adapter_swapchain,
+            .handle = undefined,
+            .format = undefined,
+            .extent = undefined,
+            .images = undefined,
+            .views = undefined,
+            .count = undefined,
+        };
+        swapchain.refreshMirroredFields();
+        return swapchain;
     }
 
     /// Resize / out-of-date handling: rebuild with the old swapchain handed
     /// over. On error, including `error.SurfaceHasZeroExtent`, the old
     /// swapchain is kept and still valid.
     pub fn recreate(self: *Swapchain, want: vk.Extent2D) Error!void {
-        _ = .{ self, want };
-        @panic("not implemented");
+        try self.adapter_swapchain.recreate(self.allocator, self.vki, self.vkd, self.pdev, self.device, self.surface, want);
+        self.refreshMirroredFields();
     }
 
     /// Destroy the image views and the swapchain. The device must no longer use them.
     pub fn deinit(self: *Swapchain) void {
-        _ = self;
-        @panic("not implemented");
+        self.adapter_swapchain.deinit(self.allocator, self.vkd, self.device);
+        self.* = undefined;
+    }
+
+    fn refreshMirroredFields(self: *Swapchain) void {
+        self.handle = self.adapter_swapchain.handle;
+        self.format = self.adapter_swapchain.format;
+        self.extent = self.adapter_swapchain.extent;
+        self.images = self.adapter_swapchain.images;
+        self.views = self.adapter_swapchain.views;
+        self.count = @intCast(self.adapter_swapchain.images.len);
     }
 };
 
