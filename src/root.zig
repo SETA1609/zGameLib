@@ -37,7 +37,7 @@ pub const surface = @import("surface");
 
 /// Graphics backend enum (scaffold: only `.vulkan` is implemented).
 pub const GfxBackend = @import("backend").GfxBackend;
-/// A reusable **swapchain** (renderer policy: format/present-mode/recreation).
+/// The framework's **swapchain** policy over the Vulkan adapter's `Swapchain` helper.
 pub const swapchain = @import("swapchain");
 
 /// zClip — the raw **animation** lib (sprite-atlas + skeletal-from-glTF),

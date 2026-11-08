@@ -81,7 +81,7 @@ Read them in this order — each builds on the last:
 | 02 | [`02-vulkan-and-the-vulkan-stack.md`](02-vulkan-and-the-vulkan-stack.md) | what Vulkan is; the object hierarchy; what `vk`, `volk`, `VMA`, and `shaderc` each do |
 | 03 | [`03-the-surface-bridge.md`](03-the-surface-bridge.md) | the one seam where windowing meets Vulkan, and why no type crosses it |
 | 04 | [`04-gpu-bringup.md`](04-gpu-bringup.md) | the `Gpu` helper: loader → instance → surface → device → queue, in order |
-| 05 | [`05-the-swapchain.md`](05-the-swapchain.md) | the ring of images you present to the screen; format/present-mode/resize policy |
+| 05 | [`05-the-swapchain.md`](05-the-swapchain.md) | the ring of images you present to the screen; the adapter builds and rebuilds it, the framework picks format, present mode, and when to rebuild |
 | 06 | [`06-the-frame-ring.md`](06-the-frame-ring.md) | frames-in-flight; fences vs. semaphores; acquire → render → present |
 | 07 | [`07-the-app-harness.md`](07-the-app-harness.md) | the top-level `App` loop, and when *not* to use it |
 | 08 | [`08-hot-reload.md`](08-hot-reload.md) | hot reload at the foundation level — rebuild primitives, typed hooks, what Tier 1 does (and doesn't) reload |

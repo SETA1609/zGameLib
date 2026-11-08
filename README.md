@@ -72,7 +72,7 @@ const vk        = zgame.vk;            // vulkan-zig's typed Vulkan API
 const vma       = zgame.vma;           // GPU memory allocator
 const shaderc   = zgame.shaderc;       // GLSL → SPIR-V (opt-in -Dshaderc)
 const surface   = zgame.surface;       // the platform↔vulkan surface bridge
-const swapchain = zgame.swapchain;     // a reusable swapchain (renderer policy)
+const swapchain = zgame.swapchain;     // the swapchain policy over the adapter's helper
 const zclip     = zgame.zclip;         // raw animation lib (sprite + skeletal)
 const animation = zgame.animation;     // unified animation API over zclip
 ```

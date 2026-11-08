@@ -20,9 +20,11 @@ const vk = vulkan_stack.vk;
 /// The errors `create` and `recreate` return; the adapter's swapchain error set.
 pub const Error = vulkan_stack.SwapchainError;
 
-/// zGameLib's swapchain policy, passed to the adapter's helper: sRGB BGRA,
-/// mailbox else FIFO, the surface's minimum image count plus one, and
-/// transfer-dst usage so a frame can start with `vkCmdClearColorImage`.
+/// zGameLib's swapchain policy, passed to the adapter's helper: 8-bit
+/// blue-green-red-alpha pixels in the standard red-green-blue colour space,
+/// mailbox present mode else first-in-first-out, the surface's minimum image
+/// count plus one, and transfer-destination usage so a frame can start with
+/// `vkCmdClearColorImage`.
 pub const framework_options: vulkan_stack.Swapchain.Options = .{
     .preferred_format = .{ .format = .b8g8r8a8_srgb, .color_space = .srgb_nonlinear_khr },
     .preferred_present_mode = .mailbox_khr,

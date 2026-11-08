@@ -132,6 +132,20 @@ This is why `begin` returns an *optional* `?Frame`: a `null` means "I had to reb
 the swapchain, skip drawing this iteration". You just `if (try ring.begin(...)) |f|`
 and the resize case handles itself.
 
+A minimized window is the same case stretched over time. Its surface can report a
+0×0 extent, so the rebuild fails with `SurfaceHasZeroExtent` — and the adapter keeps
+the old swapchain when a rebuild fails (file 05). `FrameRing` treats that error as
+"not yet": `begin` keeps returning `null` while the window is minimized and draws
+again once it is restored. A resize handler that calls `recreate` itself should do
+the same:
+
+```zig
+if (events.resizes.len > 0) chain.recreate(extent) catch |recreate_error| switch (recreate_error) {
+    error.SurfaceHasZeroExtent => {}, // minimized: keep the old swapchain until the window is restored
+    else => return recreate_error,
+};
+```
+
 ---
 
 ## Why this is framework policy, not lib API

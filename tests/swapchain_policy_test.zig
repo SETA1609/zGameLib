@@ -10,8 +10,8 @@ const vk = vulkan_stack.vk;
 
 const AdapterSwapchain = vulkan_stack.Swapchain;
 
-// WHEN reading the framework policy · THEN it prefers sRGB BGRA in the sRGB non-linear colour space.
-test "framework policy prefers sRGB BGRA" {
+// WHEN reading the framework policy · THEN it prefers 8-bit blue-green-red-alpha pixels in the standard red-green-blue colour space.
+test "framework policy prefers blue-green-red-alpha pixels in the standard red-green-blue colour space" {
     try std.testing.expectEqual(vk.Format.b8g8r8a8_srgb, swapchain.framework_options.preferred_format.format);
     try std.testing.expectEqual(vk.ColorSpaceKHR.srgb_nonlinear_khr, swapchain.framework_options.preferred_format.color_space);
 }
@@ -23,8 +23,8 @@ test "framework policy chooses mailbox when the surface offers it" {
     try std.testing.expectEqual(vk.PresentModeKHR.mailbox_khr, chosen);
 }
 
-// WHEN a surface offers no mailbox · GIVEN the framework policy · THEN FIFO is chosen (always supported).
-test "framework policy falls back to FIFO without mailbox" {
+// WHEN a surface offers no mailbox mode · GIVEN the framework policy · THEN first-in-first-out mode is chosen (every driver supports it).
+test "framework policy falls back to first-in-first-out without mailbox" {
     const available = [_]vk.PresentModeKHR{ .immediate_khr, .fifo_khr };
     const chosen = AdapterSwapchain.selectPresentMode(&available, swapchain.framework_options.preferred_present_mode);
     try std.testing.expectEqual(vk.PresentModeKHR.fifo_khr, chosen);

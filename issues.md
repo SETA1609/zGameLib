@@ -6,7 +6,7 @@ Each issue is one PR. Status is `todo`, `doing`, `review`, `done`, or `dropped`.
 
 ## Issue 9 — Delegate the swapchain to the Vulkan adapter
 
-Status: doing
+Status: review
 Needs: the Vulkan adapter's Issue 8 (swapchain helper), merged as `bf23d83`
 
 The Vulkan adapter's Issue 8 implements its opt-in `vk_stack.Swapchain`: `create`, `recreate`, `deinit`, `toRaw`, `Options`, and the default policy as pure `select*` functions. `recreate` keeps the old swapchain when building the new one fails, a 0×0 surface is `SurfaceHasZeroExtent`, image usage and composite alpha are checked against the surface capabilities, and its tests run on a `VK_EXT_headless_surface` surface. `shared/swapchain.zig` has the same Vulkan calls without those fixes: its `recreate` destroys the image views before it rebuilds, so a failed rebuild leaves the swapchain unusable. Two copies of the mechanism is one too many.
@@ -14,7 +14,7 @@ The Vulkan adapter's Issue 8 implements its opt-in `vk_stack.Swapchain`: `create
 Split the work: the adapter owns the mechanism (create, recreate, failure handling, capability checks, the `select*` defaults); zGameLib owns the policy (which `Options` it passes) and the timing (`FrameRing` decides when to recreate).
 
 - Move the `libs/zig-cpp-vulkan-stack-adapter` pin to `bf23d83`, the commit that merges its Issue 8.
-- Reimplement `shared/swapchain.zig` over `vk_stack.Swapchain`. The adapter's helper allocates its image and view lists, so `gpu.createSwapchain` takes an allocator: `gpu.createSwapchain(allocator, extent)`, and `Swapchain.create(allocator, vki, vkd, pdev, device, surface, extent)` replaces the struct literal plus `init`. `recreate(extent)`, `deinit()`, and the public `handle`, `format`, `extent`, `images`, `views`, and `count` fields stay (`images` and `views` become slices). zGameLib passes its policy as `framework_options` (sRGB BGRA, mailbox else FIFO, min + 1 images, transfer-dst usage for clears) and holds the dispatch tables and allocator the adapter calls need. The changelog lists the API changes.
+- Reimplement `shared/swapchain.zig` over `vk_stack.Swapchain`. The adapter's helper allocates its image and view lists, so `gpu.createSwapchain` takes an allocator: `gpu.createSwapchain(allocator, extent)`, and `Swapchain.create(allocator, vki, vkd, pdev, device, surface, extent)` replaces the struct literal plus `init`. `recreate(extent)`, `deinit()`, and the public `handle`, `format`, `extent`, `images`, `views`, and `count` fields stay (`images` and `views` become slices). zGameLib passes its policy as `framework_options` (8-bit blue-green-red-alpha pixels in the standard red-green-blue colour space, mailbox present mode else first-in-first-out, the minimum image count plus one, transfer-destination usage for clears) and holds the dispatch tables and allocator the adapter calls need. The changelog lists the API changes.
 - `FrameRing.begin` and `end`: on `SurfaceHasZeroExtent` skip the frame (return null) instead of failing, so a minimized window waits for a resize.
 - Rewrite `docs/theory/05-the-swapchain.md`: "Why this is framework policy, not lib API" becomes "Mechanism in the adapter, policy in the framework"; describe the kept old swapchain on failure, the zero extent, and the capability checks; quote the adapter's `docs/api.md`; update the `recreate` snippet. Update `docs/theory/06-the-frame-ring.md` for the zero-extent skip, and `README.md`, `cheat_sheet.md`, and `docs/reference.md` where they describe the swapchain.
 
