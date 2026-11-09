@@ -4,6 +4,17 @@ Each issue is one PR, on a branch `issue-<n>-<slug>`, with its changelog entry i
 
 ---
 
+## Issue 10 — Move the library pins to the merged releases
+
+Status: review
+Needs: —
+
+The platform adapter, the Vulkan adapter, and zClip have merged their release branches. Move `libs/zig-cpp-vulkan-stack-adapter` from `bf23d83` to `b321a96` (the adapter's v0.6.0 release commit, which adds the surface format documentation and the version), `libs/zig-cpp-platform-stack-adapter` from `7e6630c` to `2a7309f` (its v0.7.0 release commit), and `libs/zClip` from `a34cfe8` to `6be766c` (its v0.6.0 release commit plus the issues added after it). No zGameLib code changes.
+
+Done when: `zig build test` and `zig build examples` pass with the new pins.
+
+---
+
 ## Issue 9 — Delegate the swapchain to the Vulkan adapter
 
 Status: review
