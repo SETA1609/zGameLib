@@ -4,6 +4,28 @@ Each issue is one PR, on a branch `issue-<n>-<slug>`, with its changelog entry i
 
 ---
 
+## Issue 11 — Run the macOS MoltenVK path on a real Mac
+
+Status: todo
+Needs: —
+
+`shared/surface.zig` handles `.macos` through `getCocoaHandle` and `createMetalSurface`, and CI compiles on macOS, but the job is non-blocking and nothing has run the path. Run `clear-color`, `clear-color-2`, and `depth-cube` on macOS with MoltenVK and fix what fails. Add a runtime check to CI if a hosted macOS runner can provide MoltenVK; otherwise say in `docs/ROADMAP.md` that macOS runtime checks are manual. Then make the macOS build job blocking and tick the macOS item in `docs/ROADMAP.md`.
+
+Done when: the three examples render on macOS through a window resize; the macOS build job gates pull requests.
+
+---
+
+## Issue 12 — Finish moving the CI script strings into named constants
+
+Status: todo
+Needs: —
+
+`scripts/ci.py` and `scripts/install_display_deps.py` already group most strings in `StrEnum` classes, but some are still bare at the call site. In `scripts/ci.py`: the format targets and output directories (`build.zig`, `build.zig.zon`, `examples`, `zig-out`, `bin`, `.zig-cache`), the `-Dshaderc` flag, and the decoupling pattern. In `scripts/install_display_deps.py`: the two `libvulkan.so.1` paths. Use descriptive class names. No behaviour changes.
+
+Done when: those strings appear only in their definitions; `scripts/ci.py check` and `scripts/ci.py decoupling` give the same results as before.
+
+---
+
 ## Issue 10 — Move the library pins to the merged releases
 
 Status: review
