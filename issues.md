@@ -4,6 +4,17 @@ Each issue is one PR, on a branch `issue-<n>-<slug>`, with its changelog entry i
 
 ---
 
+## Issue 11 — Move the platform adapter and zClip pins to their main branches
+
+Status: review
+Needs: —
+
+The platform adapter's `main` has merged the input context stack, the application data and cache directories, and the native folder picker. Move `libs/zig-cpp-platform-stack-adapter` from `2a7309f` to `a2f649f` and `libs/zClip` from `6be766c` to `fe9c8ad` (one added issue). No zGameLib code changes.
+
+Done when: `zig build test` and `zig build examples` pass with the new pins.
+
+---
+
 ## Issue 10 — Move the library pins to the merged releases
 
 Status: review
