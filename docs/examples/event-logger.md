@@ -43,7 +43,7 @@ Initialises `platform`, creates a window with `renderer = .none`, then loops: pu
   A hit means the **platform** lib pulled in our Vulkan stack — fix it there, not
   here. (Bare `vk*` C symbols are *not* checked: SDL3 ships its own Vulkan loader,
   so they appear in every SDL3-linked binary — see `ladder.md` § Decoupling
-  checks. `scripts/ci.sh decoupling` is the source of truth.)
+  checks. `scripts/ci/ci.sh decoupling` is the source of truth.)
 - Zero crashes, zero validation-layer messages (there is no Vulkan to validate — listed for symmetry with `clear-color.md`).
 
 ## Build

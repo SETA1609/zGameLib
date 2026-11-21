@@ -168,7 +168,7 @@ read: a write-after-read hazard (30 in 30 frames). `depth-cube` passes
 `COLOR_ATTACHMENT_OUTPUT` as the transition's source stage, the same stage as
 the wait, so the transition is chained after it.
 
-`python scripts/ci.py sync-validation` runs `depth-cube` with synchronization
+`python scripts/ci/ci.py sync-validation` runs `depth-cube` with synchronization
 validation and fails on any validation error, so these hazards cannot come
 back unnoticed.
 
